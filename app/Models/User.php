@@ -6,11 +6,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Str;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasApiTokens;
 
     /**
      * The attributes that are mass assignable.
@@ -21,16 +23,18 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'email_verification_token'
     ];
-
+    
     /**
      * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
+    *
+    * @var list<string>
+    */
     protected $hidden = [
         'password',
         'remember_token',
+        'email_verification_token'
     ];
 
     /**
@@ -44,5 +48,19 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function generateEmailVerificationToken()
+    {
+        $this->email_verification_token = Str::random(10);
+        $this->save();
+        return $this->email_verification_token;
+    }
+
+    public function markEmailAsVerified()
+    {
+        $this->email_verified_at = now();
+        $this->email_verification_token = null;
+        $this->save();
     }
 }
