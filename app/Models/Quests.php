@@ -5,15 +5,16 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
-class QuizAttempt extends Model
+class Quests extends Model
 {
     protected $keyType = 'string';
     public $incrementing = false;
 
     protected $fillable = [
-        'user_id',
-        'quiz_id',
-        'score'
+        'title',
+        'target_value',
+        'xp_reward',
+        'quest_type'
     ];
 
     protected static function boot()
@@ -26,13 +27,15 @@ class QuizAttempt extends Model
     }
 
     // Relationships
-    public function user()
+    public function userQuests()
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->hasMany(UserQuest::class, 'quest_id');
     }
 
-    public function quiz()
+    public function users()
     {
-        return $this->belongsTo(Quiz::class, 'quiz_id');
+        return $this->belongsToMany(User::class, 'user_quests', 'quest_id', 'user_id')
+                    ->withPivot('current_progress', 'is_completed')
+                    ->withTimestamps();
     }
 }

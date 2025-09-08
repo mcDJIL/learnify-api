@@ -14,6 +14,18 @@ class User extends Authenticatable
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasApiTokens;
 
+    protected $keyType = 'string';
+    public $incrementing = false;
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            $model->id = (string) Str::uuid();
+        });
+    }
+
     /**
      * The attributes that are mass assignable.
      *
@@ -62,5 +74,48 @@ class User extends Authenticatable
         $this->email_verified_at = now();
         $this->email_verification_token = null;
         $this->save();
+    }
+
+    public function profile()
+    {
+        return $this->hasOne(Profile::class, 'user_id');
+    }
+
+    public function lessonProgress()
+    {
+        return $this->hasMany(LessonProgress::class, 'user_id');
+    }
+
+    public function favoriteCourses()
+    {
+        return $this->hasMany(FavoriteCourse::class, 'user_id');
+    }
+
+    public function userQuests()
+    {
+        return $this->hasMany(UserQuest::class, 'user_id');
+    }
+
+    public function quests()
+    {
+        return $this->belongsToMany(Quests::class, 'user_quests', 'user_id', 'quest_id')
+                    ->withPivot('current_progress', 'is_completed')
+                    ->withTimestamps();
+    }
+
+    public function quizAttempts()
+    {
+        return $this->hasMany(QuizAttempt::class, 'user_id');
+    }
+
+    public function categoryPreferences()
+    {
+        return $this->hasMany(UserCategoryPreferences::class, 'user_id');
+    }
+
+    public function preferredCategories()
+    {
+        return $this->belongsToMany(Category::class, 'user_category_preferences', 'user_id', 'category_id')
+                    ->withTimestamps();
     }
 }
