@@ -20,24 +20,25 @@ Route::prefix('auth')->group(function () {
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
-        Route::get('profile', [AuthController::class, 'profile']);
         Route::get('me', [AuthController::class, 'me']);
-
-        // Home routes
-        Route::get('/home', [HomeController::class, 'index']);
-        Route::get('/home/category/{categoryId}', [HomeController::class, 'getCoursesByCategory']);
-        Route::get('/home/enrolled-courses', [HomeController::class, 'getEnrolledCourses']);
-
-        // Course routes
-        Route::get('/courses', [CourseController::class, 'index']);
-        Route::get('/courses/search', [CourseController::class, 'search']);
-
-        Route::post('/favorite-courses', [FavoriteCourseController::class, 'store']);
-        Route::get('/favorite-courses', [FavoriteCourseController::class, 'index']);
-
-        Route::get('/profile', [ProfileController::class, 'show']);
-        Route::get('/profile/enrolled-courses', [ProfileController::class, 'enrolledCourses']);
     });
+});
+
+Route::middleware('auth:sanctum')->group(function () {
+    // Home routes
+    Route::get('/home', [HomeController::class, 'index']);
+    Route::get('/home/category/{categoryId}', [HomeController::class, 'getCoursesByCategory']);
+    Route::get('/home/enrolled-courses', [HomeController::class, 'getEnrolledCourses']);
+
+    // Course routes
+    Route::get('/courses', [CourseController::class, 'index']);
+    Route::get('/courses/search', [CourseController::class, 'search']);
+
+    Route::post('/favorite-courses', [FavoriteCourseController::class, 'store']);
+    Route::get('/favorite-courses', [FavoriteCourseController::class, 'index']);
+
+    Route::get('/profile', [ProfileController::class, 'show']);
+    Route::get('/profile/enrolled-courses', [ProfileController::class, 'enrolledCourses']);
 });
 
 // Public routes
