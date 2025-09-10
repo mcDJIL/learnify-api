@@ -27,6 +27,7 @@ Route::prefix('auth')->group(function () {
 Route::middleware('auth:sanctum')->group(function () {
     // Home routes
     Route::get('/home', [HomeController::class, 'index']);
+    Route::get('/home/search', [HomeController::class, 'search']);
     Route::get('/home/category/{categoryId}', [HomeController::class, 'getCoursesByCategory']);
     Route::get('/home/enrolled-courses', [HomeController::class, 'getEnrolledCourses']);
 
