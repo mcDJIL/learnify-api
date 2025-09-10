@@ -28,7 +28,7 @@ class AuthController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Validation failed',
+                'message' => 'Validasi gagal',
                 'errors' => $validator->errors()
             ], 422);
         }
@@ -48,7 +48,7 @@ class AuthController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'User registered successfully. Please check your email for verification.',
+                'message' => 'Registrasi berhasil. Silakan cek email Anda untuk verifikasi.',
                 'data' => [
                     'user' => [
                         'id' => $user->id,
@@ -62,7 +62,7 @@ class AuthController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Registration failed. Please try again. ' . $e,
+                'message' => 'Registrasi gagal. Silakan coba lagi. ' . $e,
             ], 500);
         }
     }
@@ -80,7 +80,7 @@ class AuthController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Validation failed',
+                'message' => 'Validasi gagal',
                 'errors' => $validator->errors()
             ], 422);
         }
@@ -92,29 +92,34 @@ class AuthController extends Controller
         if (!$user) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Invalid verification token or email.',
+                'message' => 'Token verifikasi atau email tidak valid.',
             ], 400);
         }
 
         if ($user->email_verified_at) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Email already verified.',
+                'message' => 'Email sudah diverifikasi.',
             ], 400);
         }
 
         $user->markEmailAsVerified();
 
+        // Create token
+        $token = $user->createToken('auth_token')->plainTextToken;
+
         return response()->json([
             'status' => 'success',
-            'message' => 'Email verified successfully.',
+            'message' => 'Email berhasil diverifikasi.',
             'data' => [
                 'user' => [
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
                     'email_verified' => true,
-                ]
+                ],
+                'access_token' => $token,
+                'token_type' => 'Bearer',
             ]
         ]);
     }
@@ -131,7 +136,7 @@ class AuthController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Validation failed',
+                'message' => 'Validasi gagal',
                 'errors' => $validator->errors()
             ], 422);
         }
@@ -141,14 +146,14 @@ class AuthController extends Controller
         if (!$user) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'User not found.',
+                'message' => 'Pengguna tidak ditemukan.',
             ], 404);
         }
 
         if ($user->email_verified_at) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Email already verified.',
+                'message' => 'Email sudah diverifikasi.',
             ], 400);
         }
 
@@ -157,7 +162,7 @@ class AuthController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Verification email sent successfully.',
+            'message' => 'Email verifikasi berhasil dikirim.',
         ]);
     }
 
@@ -174,7 +179,7 @@ class AuthController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Validation failed',
+                'message' => 'Validasi gagal',
                 'errors' => $validator->errors()
             ], 422);
         }
@@ -184,7 +189,7 @@ class AuthController extends Controller
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Invalid credentials.',
+                'message' => 'Email atau password salah.',
             ], 401);
         }
 
@@ -192,7 +197,7 @@ class AuthController extends Controller
         if (!$user->email_verified_at) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Please verify your email before logging in.',
+                'message' => 'Silakan verifikasi email Anda sebelum login.',
             ], 403);
         }
 
@@ -201,7 +206,7 @@ class AuthController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Login successful.',
+            'message' => 'Login berhasil.',
             'data' => [
                 'user' => [
                     'id' => $user->id,
@@ -225,13 +230,13 @@ class AuthController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Logout successful.',
+                'message' => 'Logout berhasil.',
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Logout failed.',
+                'message' => 'Logout gagal.',
             ], 500);
         }
     }
@@ -284,7 +289,7 @@ class AuthController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Validation failed',
+                'message' => 'Validasi gagal',
                 'errors' => $validator->errors()
             ], 422);
         }
@@ -294,7 +299,7 @@ class AuthController extends Controller
         if (!$user) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'User not found.',
+                'message' => 'Pengguna tidak ditemukan.',
             ], 404);
         }
 
@@ -307,13 +312,13 @@ class AuthController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Password reset email sent successfully.',
+                'message' => 'Email reset password berhasil dikirim.',
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Failed to send password reset email.',
+                'message' => 'Gagal mengirim email reset password.',
             ], 500);
         }
     }
@@ -332,7 +337,7 @@ class AuthController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Validation failed',
+                'message' => 'Validasi gagal',
                 'errors' => $validator->errors()
             ], 422);
         }
@@ -348,13 +353,13 @@ class AuthController extends Controller
         if ($status === Password::PASSWORD_RESET) {
             return response()->json([
                 'status' => 'success',
-                'message' => 'Password reset successfully.',
+                'message' => 'Password berhasil direset.',
             ]);
         }
 
         return response()->json([
             'status' => 'error',
-            'message' => 'Password reset failed. Invalid token or email.',
+            'message' => 'Reset password gagal. Token atau email tidak valid.',
         ], 400);
     }
 }
