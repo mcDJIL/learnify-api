@@ -1,6 +1,9 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\CourseController;
+use App\Http\Controllers\Api\FavoriteCourseController;
+use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\UserCategoryPreferencesController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\HomeController;
@@ -24,9 +27,19 @@ Route::prefix('auth')->group(function () {
         Route::get('/home', [HomeController::class, 'index']);
         Route::get('/home/category/{categoryId}', [HomeController::class, 'getCoursesByCategory']);
         Route::get('/home/enrolled-courses', [HomeController::class, 'getEnrolledCourses']);
+
+        // Course routes
+        Route::get('/courses', [CourseController::class, 'index']);
+        Route::get('/courses/search', [CourseController::class, 'search']);
+
+        Route::post('/favorite-courses', [FavoriteCourseController::class, 'store']);
+        Route::get('/favorite-courses', [FavoriteCourseController::class, 'index']);
+
+        Route::get('/profile', [ProfileController::class, 'show']);
+        Route::get('/profile/enrolled-courses', [ProfileController::class, 'enrolledCourses']);
     });
 });
 
 // Public routes
-Route::post('/user-preferences', action: [UserCategoryPreferencesController::class, 'store']);
+Route::post('/user-preferences', [UserCategoryPreferencesController::class, 'store']);
 Route::get('/categories', [CategoryController::class, 'index']);

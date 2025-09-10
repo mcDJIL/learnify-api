@@ -242,24 +242,6 @@ class AuthController extends Controller
     }
 
     /**
-     * Get user profile
-     */
-    public function profile(Request $request)
-    {
-        return response()->json([
-            'status' => 'success',
-            'data' => [
-                'user' => [
-                    'id' => $request->user()->id,
-                    'name' => $request->user()->name,
-                    'email' => $request->user()->email,
-                    'email_verified' => !is_null($request->user()->email_verified_at),
-                ]
-            ]
-        ]);
-    }
-
-    /**
      * Get user login data
      */
     public function me(Request $request)

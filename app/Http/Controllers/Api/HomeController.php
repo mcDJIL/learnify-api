@@ -15,7 +15,7 @@ class HomeController extends Controller
     /**
      * Get home data for mobile app
      */
-    public function index()
+    public function index(Request $request)
     {
         try {
             $user = Auth::user();
@@ -28,48 +28,57 @@ class HomeController extends Controller
                 ->pluck('category_id')
                 ->toArray();
 
+            // Ambil parameter category_id dari request
+            $categoryId = $request->get('category_id');
+
             // Get recommended courses based on user preferences
             $recommendedCourses = collect();
             if (!empty($userPreferences)) {
-                $recommendedCourses = Course::with(['instructor', 'category'])
+                $recommendedCoursesQuery = Course::with(['instructor', 'category'])
                     ->whereIn('category_id', $userPreferences)
                     ->orderBy('rating', 'desc')
-                    ->limit(10)
-                    ->get();
+                    ->limit(10);
+
+                // Jika ada category_id, filter juga berdasarkan category_id
+                if ($categoryId) {
+                    $recommendedCoursesQuery->where('category_id', $categoryId);
+                }
+
+                $recommendedCourses = $recommendedCoursesQuery->get();
             }
 
-            // If no preferences or not enough recommended courses, get popular courses
-            // if ($recommendedCourses->count() < 5) {
-            //     $additionalCourses = Course::with(['instructor', 'category'])
-            //         ->whereNotIn('id', $recommendedCourses->pluck('id'))
-            //         ->orderBy('total_students', 'desc')
-            //         ->orderBy('rating', 'desc')
-            //         ->limit(10 - $recommendedCourses->count())
-            //         ->get();
-                
-            //     $recommendedCourses = $recommendedCourses->merge($additionalCourses);
-            // }
-            
             // Get courses user is enrolled in (has progress)
-            $enrolledCourses = Course::with(['instructor', 'category'])
+            $enrolledCoursesQuery = Course::with(['instructor', 'category'])
                 ->whereHas('progress', function ($query) use ($user) {
                     $query->where('user_id', $user->id);
-                })
-                ->get();
+                });
 
-            // Get continuing courses (enrolled but not completed)
-            $continuingCourses = $enrolledCourses->filter(function ($course) {
-                // Assuming you have completion status in CourseProgress
-                return true; // You can add logic here when CourseProgress model is complete
-            });
+            // Jika ada category_id, filter juga berdasarkan category_id
+            if ($categoryId) {
+                $enrolledCoursesQuery->where('category_id', $categoryId);
+            }
+
+            $enrolledCourses = $enrolledCoursesQuery->get();
+
+            // Get all courses (default or by category)
+            $allCoursesQuery = Course::with(['instructor', 'category'])
+                ->orderBy('rating', 'desc')
+                ->orderBy('total_students', 'desc');
+
+            if ($categoryId) {
+                $allCoursesQuery->where('category_id', $categoryId);
+            }
+
+            $allCourses = $allCoursesQuery->get();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Home data retrieved successfully',
+                'message' => 'Data home berhasil diambil',
                 'data' => [
                     'categories' => $categories,
                     'recommended_courses' => $recommendedCourses,
                     'enrolled_courses' => $enrolledCourses,
+                    'all_courses' => $allCourses,
                     'user_preferences' => $userPreferences
                 ]
             ], 200);
@@ -77,7 +86,7 @@ class HomeController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to retrieve home data',
+                'message' => 'Gagal mengambil data home',
                 'error' => $e->getMessage()
             ], 500);
         }
