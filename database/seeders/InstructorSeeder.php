@@ -17,20 +17,17 @@ class InstructorSeeder extends Seeder
             [
                 'id' => (string) Str::uuid(),
                 'name' => 'Budi Santoso',
-                'bio' => 'Instruktur Laravel dan PHP berpengalaman.',
-                'photo_url' => 'https://dummyimage.com/200x200/000/fff&text=Budi'
+                'job' => 'Senior Developer',
             ],
             [
                 'id' => (string) Str::uuid(),
                 'name' => 'Siti Aminah',
-                'bio' => 'Ahli Web Development dan UI/UX.',
-                'photo_url' => 'https://dummyimage.com/200x200/000/fff&text=Siti'
+                'job' => 'Web Developer',
             ],
             [
                 'id' => (string) Str::uuid(),
                 'name' => 'Rizky Pratama',
-                'bio' => 'Instruktur Pemrograman Dasar dan Mobile.',
-                'photo_url' => 'https://dummyimage.com/200x200/000/fff&text=Rizky'
+                'job' => 'Junior Developer',
             ]
         ];
 
