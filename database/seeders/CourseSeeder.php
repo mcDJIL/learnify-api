@@ -36,7 +36,6 @@ class CourseSeeder extends Seeder
                 'duration_hours' => 10,
                 'rating' => 4.8,
                 'total_students' => 120,
-                'is_completed' => false
             ],
             [
                 'title' => 'Web Development dengan PHP',
@@ -49,7 +48,6 @@ class CourseSeeder extends Seeder
                 'duration_hours' => 8,
                 'rating' => 4.5,
                 'total_students' => 90,
-                'is_completed' => false
             ],
             [
                 'title' => 'Dasar-dasar Pemrograman',
@@ -62,7 +60,6 @@ class CourseSeeder extends Seeder
                 'duration_hours' => 12,
                 'rating' => 4.7,
                 'total_students' => 150,
-                'is_completed' => false
             ]
         ];
 
