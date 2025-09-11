@@ -9,18 +9,34 @@ use Illuminate\Http\Request;
 class CourseController extends Controller
 {
     /**
-     * Get all courses or by category
+     * Get all courses or by category, with filter (popular, terbaru, terlama)
      */
     public function index(Request $request)
     {
         $categoryId = $request->get('category_id');
+        $filter = $request->get('filter', 'all'); // all, popular, terbaru, terlama
 
-        $query = Course::with(['instructor', 'category'])
-            ->orderBy('rating', 'desc')
-            ->orderBy('total_students', 'desc');
+        $query = Course::with(['instructor', 'category']);
 
         if ($categoryId) {
             $query->where('category_id', $categoryId);
+        }
+
+        // Filter sorting
+        switch ($filter) {
+            case 'popular':
+                $query->orderBy('total_students', 'desc')->orderBy('rating', 'desc');
+                break;
+            case 'terbaru':
+                $query->orderBy('created_at', 'desc');
+                break;
+            case 'terlama':
+                $query->orderBy('created_at', 'asc');
+                break;
+            case 'all':
+            default:
+                $query->orderBy('rating', 'desc')->orderBy('total_students', 'desc');
+                break;
         }
 
         $courses = $query->get();
@@ -38,6 +54,7 @@ class CourseController extends Controller
     public function search(Request $request)
     {
         $searchTerm = $request->get('q', '');
+        $filter = $request->get('filter', 'all'); // all, popular, terbaru, terlama
 
         if (empty($searchTerm)) {
             return response()->json([
@@ -46,7 +63,7 @@ class CourseController extends Controller
             ], 400);
         }
 
-        $courses = Course::with(['instructor', 'category'])
+        $query = Course::with(['instructor', 'category'])
             ->where(function ($query) use ($searchTerm) {
                 $query->where('title', 'LIKE', "%{$searchTerm}%")
                       ->orWhere('description', 'LIKE', "%{$searchTerm}%")
@@ -57,10 +74,26 @@ class CourseController extends Controller
                       ->orWhereHas('category', function ($q) use ($searchTerm) {
                           $q->where('name', 'LIKE', "%{$searchTerm}%");
                       });
-            })
-            ->orderBy('rating', 'desc')
-            ->orderBy('total_students', 'desc')
-            ->get();
+            });
+
+        // Filter sorting
+        switch ($filter) {
+            case 'popular':
+                $query->orderBy('total_students', 'desc')->orderBy('rating', 'desc');
+                break;
+            case 'terbaru':
+                $query->orderBy('created_at', 'desc');
+                break;
+            case 'terlama':
+                $query->orderBy('created_at', 'asc');
+                break;
+            case 'all':
+            default:
+                $query->orderBy('rating', 'desc')->orderBy('total_students', 'desc');
+                break;
+        }
+
+        $courses = $query->get();
 
         return response()->json([
             'success' => true,
