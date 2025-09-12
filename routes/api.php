@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\CourseController;
 use App\Http\Controllers\Api\CourseReviewController;
 use App\Http\Controllers\Api\FavoriteCourseController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\QuestController;
 use App\Http\Controllers\Api\UserCategoryPreferencesController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\HomeController;
@@ -49,6 +50,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/profile', [ProfileController::class, 'show']);
     Route::get('/profile/enrolled-courses', [ProfileController::class, 'enrolledCourses']);
+
+    Route::post('/quests/finish', [QuestController::class, 'finish']);
+    Route::post('/quests/daily', [QuestController::class, 'daily']);
+    Route::post('/quests/weekly', [QuestController::class, 'weekly']);
 });
 
 // Public routes
