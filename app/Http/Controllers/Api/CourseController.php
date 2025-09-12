@@ -321,4 +321,38 @@ class CourseController extends Controller
             'data' => $progress
         ], 201);
     }
+
+    /**
+     * Complete a course
+     */
+    public function completeCourse(Request $request)
+    {
+        $request->validate([
+            'course_id' => 'required|uuid|exists:courses,id',
+        ]);
+
+        $user = Auth::user();
+
+        $progress = CourseProgress::where('user_id', $user->id)
+            ->where('course_id', $request->course_id)
+            ->first();
+
+        if (!$progress) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Progress kursus tidak ditemukan.'
+            ], 404);
+        }
+
+        $progress->update([
+            'completion_percentage' => 100,
+            'is_completed' => true
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Kursus berhasil diselesaikan.',
+            'data' => $progress
+        ]);
+    }
 }
