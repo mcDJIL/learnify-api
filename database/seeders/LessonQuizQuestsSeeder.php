@@ -29,7 +29,7 @@ class LessonQuizQuestsSeeder extends Seeder
                 'video_url' => 'https://dummyvideo.com/laravel1.mp4',
                 'duration_minutes' => 15,
                 'lesson_order' => 1,
-                'is_completed' => 0
+                'is_completed' => '0'
             ],
             [
                 'id' => (string) Str::uuid(),
@@ -38,7 +38,7 @@ class LessonQuizQuestsSeeder extends Seeder
                 'video_url' => 'https://dummyvideo.com/laravel2.mp4',
                 'duration_minutes' => 20,
                 'lesson_order' => 2,
-                'is_completed' => 0
+                'is_completed' => '0'
             ]
         ];
 
