@@ -35,6 +35,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Course routes
     Route::get('/courses', [CourseController::class, 'index']);
     Route::get('/courses/search', [CourseController::class, 'search']);
+    Route::get('/courses/{id}', [CourseController::class, 'show']);
 
     Route::post('/favorite-courses', [FavoriteCourseController::class, 'store']);
     Route::get('/favorite-courses', [FavoriteCourseController::class, 'index']);

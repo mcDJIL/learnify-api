@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Course;
+use App\Models\CourseReview;
 use Illuminate\Http\Request;
 
 class CourseController extends Controller
@@ -99,6 +100,49 @@ class CourseController extends Controller
             'success' => true,
             'message' => 'Hasil pencarian kursus berhasil diambil',
             'data' => $courses
+        ]);
+    }
+
+    /**
+     * Get course detail by ID
+     */
+    public function show($id)
+    {
+        $user = auth('sanctum')->user();
+
+        $course = Course::with([
+            'instructor',
+            'category',
+            'lessons',
+            'progress' => function ($query) use ($user) {
+                if ($user) {
+                    $query->where('user_id', $user->id);
+                }
+            }
+        ])->findOrFail($id);
+
+        // Ambil rating rata-rata dan jumlah review
+        $rating = CourseReview::where('course_id', $id)
+            ->avg('rating');
+        $rating_count = CourseReview::where('course_id', $id)
+            ->count();
+
+        // Ambil progress user (hanya satu per user per course)
+        $progress = $course->progress->first();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Detail kursus berhasil diambil',
+            'data' => [
+                'course' => $course,
+                'progress' => $progress,
+                'lessons' => $course->lessons,
+                'rating' => [
+                    'average' => $rating ? round($rating, 2) : null,
+                    'count' => $rating_count
+                ],
+                'instructor' => $course->instructor
+            ]
         ]);
     }
 }
