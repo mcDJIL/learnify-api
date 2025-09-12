@@ -41,10 +41,20 @@ class QuestController extends Controller
             ], 400);
         }
 
-        // Update XP di profile
+        // Update XP di profile dan level jika perlu
         $profile = Profile::where('user_id', $user->id)->first();
+        $xpReward = $userQuest->quest->xp_reward;
+
         if ($profile) {
-            $profile->total_xp += $userQuest->quest->xp_reward;
+            $profile->total_xp += $xpReward;
+
+            // Level up logic
+            while ($profile->total_xp >= $profile->next_level_xp) {
+                $profile->level += 1;
+                $profile->total_xp -= $profile->next_level_xp;
+                $profile->next_level_xp = 100 + ($profile->level - 1) * 50;
+            }
+
             $profile->save();
         }
 
@@ -53,8 +63,8 @@ class QuestController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Quest selesai, XP berhasil ditambahkan dan quest dihapus dari daftar',
-            'xp_reward' => $userQuest->quest->xp_reward,
+            'message' => 'Quest selesai, XP dan level berhasil diupdate, quest dihapus dari daftar',
+            'xp_reward' => $xpReward,
             'profile' => $profile
         ]);
     }
