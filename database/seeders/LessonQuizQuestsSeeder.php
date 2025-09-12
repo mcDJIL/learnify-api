@@ -77,21 +77,21 @@ class LessonQuizQuestsSeeder extends Seeder
                 'title' => 'Selesaikan 1 Kursus',
                 'target_value' => 1,
                 'xp_reward' => 100,
-                'quest_type' => 'course_complete'
+                'quest_type' => 'daily'
             ],
             [
                 'id' => (string) Str::uuid(),
                 'title' => 'Selesaikan 5 Quiz',
                 'target_value' => 5,
                 'xp_reward' => 50,
-                'quest_type' => 'quiz_complete'
+                'quest_type' => 'weekly'
             ],
             [
                 'id' => (string) Str::uuid(),
                 'title' => 'Tonton 3 Video',
                 'target_value' => 3,
                 'xp_reward' => 30,
-                'quest_type' => 'lesson_watch'
+                'quest_type' => 'daily'
             ]
         ];
 
