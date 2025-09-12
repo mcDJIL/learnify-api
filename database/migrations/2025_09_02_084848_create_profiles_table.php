@@ -17,7 +17,7 @@ return new class extends Migration
             $table->integer('level')->default(1);
             $table->integer('total_xp')->default(0);
             $table->integer('next_level_xp')->default(50);
-            $table->string('photo');
+            $table->string('photo')->nullable();
             $table->timestamps();
 
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
