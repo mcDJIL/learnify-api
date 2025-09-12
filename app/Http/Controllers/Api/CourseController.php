@@ -158,21 +158,21 @@ class CourseController extends Controller
     public function startLesson(Request $request)
     {
         $request->validate([
-            'course_id' => 'required|uuid|exists:courses,id',
+            'lesson_id' => 'required|uuid|exists:lessons,id',
         ]);
         $user = Auth::user();
 
-        // Ambil lesson pertama (lesson_order paling kecil)
-        $lesson = Lesson::where('course_id', $request->course_id)
-            ->orderBy('lesson_order', 'asc')
-            ->first();
+        $lesson = Lesson::with('course')->findOrFail($request->lesson_id);
 
-        if (!$lesson) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Lesson tidak ditemukan'
-            ], 404);
-        }
+        // Ambil semua lesson di course ini, urutkan
+        $allLessons = Lesson::where('course_id', $lesson->course_id)
+            ->orderBy('lesson_order', 'asc')
+            ->get();
+
+        // Cari index/urutan lesson sekarang
+        $currentIndex = $allLessons->search(function ($item) use ($lesson) {
+            return $item->id === $lesson->id;
+        });
 
         // Buat progress lesson jika belum ada
         $progress = LessonProgress::firstOrCreate([
@@ -187,10 +187,13 @@ class CourseController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Mulai lesson pertama',
+            'message' => 'Mulai lesson',
             'data' => [
                 'lesson' => $lesson,
-                'progress' => $progress
+                'progress' => $progress,
+                'lesson_order' => $lesson->lesson_order,
+                'lesson_index' => $currentIndex + 1, // urutan dimulai dari 1
+                'total_lessons' => $allLessons->count()
             ]
         ]);
     }
