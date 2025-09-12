@@ -4,8 +4,14 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Course;
+use App\Models\CourseProgress;
 use App\Models\CourseReview;
+use App\Models\Lesson;
+use App\Models\LessonProgress;
+use App\Models\Quiz;
+use App\Models\QuizAttempt;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class CourseController extends Controller
 {
@@ -108,7 +114,7 @@ class CourseController extends Controller
      */
     public function show($id)
     {
-        $user = auth('sanctum')->user();
+        $user = Auth::user();
 
         $course = Course::with([
             'instructor',
@@ -144,5 +150,172 @@ class CourseController extends Controller
                 'instructor' => $course->instructor
             ]
         ]);
+    }
+
+    /**
+     * Start the first lesson of a course
+     */
+    public function startLesson(Request $request)
+    {
+        $request->validate([
+            'course_id' => 'required|uuid|exists:courses,id',
+        ]);
+        $user = Auth::user();
+
+        // Ambil lesson pertama (lesson_order paling kecil)
+        $lesson = Lesson::where('course_id', $request->course_id)
+            ->orderBy('lesson_order', 'asc')
+            ->first();
+
+        if (!$lesson) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lesson tidak ditemukan'
+            ], 404);
+        }
+
+        // Buat progress lesson jika belum ada
+        $progress = LessonProgress::firstOrCreate([
+            'user_id' => $user->id,
+            'lesson_id' => $lesson->id
+        ], [
+            'completion_percentage' => 0,
+            'watch_time_seconds' => 0,
+            'is_completed' => false,
+            'last_watched_at' => now()
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Mulai lesson pertama',
+            'data' => [
+                'lesson' => $lesson,
+                'progress' => $progress
+            ]
+        ]);
+    }
+
+    /**
+     * Complete a lesson and optionally proceed to the quiz
+     */
+    public function completeLesson(Request $request)
+    {
+        $request->validate([
+            'lesson_id' => 'required|uuid|exists:lessons,id',
+        ]);
+        $user = Auth::user();
+
+        $progress = LessonProgress::where('user_id', $user->id)
+            ->where('lesson_id', $request->lesson_id)
+            ->first();
+
+        if (!$progress) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Progress lesson tidak ditemukan'
+            ], 404);
+        }
+
+        $progress->update([
+            'completion_percentage' => 100,
+            'is_completed' => true,
+            'last_watched_at' => now()
+        ]);
+
+        // Ambil quiz untuk lesson ini
+        $quiz = Quiz::where('lesson_id', $request->lesson_id)
+            ->orderBy('quiz_order', 'asc')
+            ->first();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Lesson selesai, lanjut ke quiz',
+            'data' => [
+                'quiz' => $quiz
+            ]
+        ]);
+    }
+
+    /**
+     * Complete a quiz and proceed to the next lesson
+     */
+    public function completeQuiz(Request $request)
+    {
+        $request->validate([
+            'quiz_id' => 'required|uuid|exists:quizzes,id',
+            'score' => 'required|numeric'
+        ]);
+        $user = Auth::user();
+
+        // Simpan attempt quiz
+        QuizAttempt::create([
+            'user_id' => $user->id,
+            'quiz_id' => $request->quiz_id,
+            'score' => $request->score
+        ]);
+
+        // Ambil lesson terkait quiz ini
+        $lesson = Lesson::where('id', function($q) use ($request) {
+                $q->select('lesson_id')->from('quizzes')->where('id', $request->quiz_id);
+            })->first();
+
+        // Ambil lesson berikutnya
+        $nextLesson = Lesson::where('course_id', $lesson->course_id)
+            ->where('lesson_order', '>', $lesson->lesson_order)
+            ->orderBy('lesson_order', 'asc')
+            ->first();
+
+        // Ambil leaderboard quiz (top 10 skor tertinggi)
+        $leaderboard = QuizAttempt::with('user')
+            ->where('quiz_id', $request->quiz_id)
+            ->orderBy('score', 'desc')
+            ->limit(10)
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => $nextLesson ? 'Lanjut ke lesson berikutnya' : 'Course selesai',
+            'data' => [
+                'next_lesson' => $nextLesson,
+                'leaderboard' => $leaderboard
+            ]
+        ]);
+    }
+
+    /**
+     * Enroll in a course
+     */
+    public function enroll(Request $request)
+    {
+        $request->validate([
+            'course_id' => 'required|uuid|exists:courses,id',
+        ]);
+
+        $user = Auth::user();
+
+        // Cek apakah user sudah pernah daftar course ini
+        $exists = CourseProgress::where('user_id', $user->id)
+            ->where('course_id', $request->course_id)
+            ->first();
+
+        if ($exists) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda sudah terdaftar di kursus ini.'
+            ], 409);
+        }
+
+        $progress = CourseProgress::create([
+            'user_id' => $user->id,
+            'course_id' => $request->course_id,
+            'completion_percentage' => 0,
+            'is_completed' => false
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Berhasil mendaftar kursus.',
+            'data' => $progress
+        ], 201);
     }
 }

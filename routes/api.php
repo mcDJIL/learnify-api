@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CourseController;
+use App\Http\Controllers\Api\CourseReviewController;
 use App\Http\Controllers\Api\FavoriteCourseController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\UserCategoryPreferencesController;
@@ -36,6 +37,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/courses', [CourseController::class, 'index']);
     Route::get('/courses/search', [CourseController::class, 'search']);
     Route::get('/courses/{id}', [CourseController::class, 'show']);
+
+    Route::post('/courses/review', [CourseReviewController::class, 'store']);
+    Route::post('/courses/enroll', [CourseController::class, 'enroll']);
+    Route::post('/courses/start-lesson', [CourseController::class, 'startLesson']);
+    Route::post('/courses/complete-lesson', [CourseController::class, 'completeLesson']);
 
     Route::post('/favorite-courses', [FavoriteCourseController::class, 'store']);
     Route::get('/favorite-courses', [FavoriteCourseController::class, 'index']);
