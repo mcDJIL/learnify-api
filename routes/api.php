@@ -29,7 +29,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/home', [HomeController::class, 'index']);
     Route::get('/home/search', [HomeController::class, 'search']);
     Route::get('/home/category/{categoryId}', [HomeController::class, 'getCoursesByCategory']);
-    Route::get('/home/enrolled-courses', [HomeController::class, 'getEnrolledCourses']);
 
     // Course routes
     Route::get('/courses', [CourseController::class, 'index']);

@@ -48,4 +48,9 @@ class Course extends Model
     {
         return $this->hasMany(Lesson::class, 'course_id');
     }
+
+    public function progress()
+    {
+        return $this->hasMany(\App\Models\CourseProgress::class, 'course_id');
+    }
 }
