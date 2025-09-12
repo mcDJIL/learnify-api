@@ -225,6 +225,9 @@ class CourseController extends Controller
             'last_watched_at' => now()
         ]);
 
+        // Update quest progress untuk lesson
+        QuestController::updateUserQuestProgress($user->id, 'lesson');
+
         // Ambil quiz untuk lesson ini
         $quiz = Quiz::where('lesson_id', $request->lesson_id)
             ->orderBy('quiz_order', 'asc')
@@ -256,6 +259,8 @@ class CourseController extends Controller
             'quiz_id' => $request->quiz_id,
             'score' => $request->score
         ]);
+
+        QuestController::updateUserQuestProgress($user->id, 'quiz');
 
         // Ambil lesson terkait quiz ini
         $lesson = Lesson::where('id', function($q) use ($request) {
@@ -348,6 +353,8 @@ class CourseController extends Controller
             'completion_percentage' => 100,
             'is_completed' => true
         ]);
+
+        QuestController::updateUserQuestProgress($user->id, 'course');
 
         return response()->json([
             'success' => true,

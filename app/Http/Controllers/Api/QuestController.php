@@ -100,4 +100,31 @@ class QuestController extends Controller
             'data' => $userQuests
         ]);
     }
+
+    /**
+     * Update user quest progress
+     */
+    public static function updateUserQuestProgress($userId, $type)
+    {
+        // Ambil semua quest user yang belum selesai dan sesuai tipe
+        $userQuests = UserQuest::with('quest')
+            ->where('user_id', $userId)
+            ->where('is_completed', false)
+            ->whereHas('quest', function ($q) use ($type) {
+                $q->where('quest_type', $type);
+            })
+            ->get();
+
+        foreach ($userQuests as $userQuest) {
+            // Update progress
+            $userQuest->current_progress += 1;
+
+            // Jika sudah mencapai target, tandai selesai
+            if ($userQuest->current_progress >= $userQuest->quest->target_value) {
+                $userQuest->is_completed = true;
+            }
+
+            $userQuest->save();
+        }
+    }
 }

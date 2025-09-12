@@ -1,5 +1,7 @@
 <?php
 
+use App\Console\Commands\DailyQuestCron;
+use App\Console\Commands\WeeklyQuestCron;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -16,4 +18,9 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
-    })->create();
+    })
+    ->withCommands([
+        DailyQuestCron::class,
+        WeeklyQuestCron::class,
+    ])
+    ->create();
