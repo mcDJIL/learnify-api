@@ -25,6 +25,8 @@ Route::prefix('auth')->group(function () {
 });
 
 Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/user-preferences', [UserCategoryPreferencesController::class, 'store']);
+    
     // Home routes
     Route::get('/home', [HomeController::class, 'index']);
     Route::get('/home/search', [HomeController::class, 'search']);
@@ -42,5 +44,4 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 // Public routes
-Route::post('/user-preferences', [UserCategoryPreferencesController::class, 'store']);
 Route::get('/categories', [CategoryController::class, 'index']);
