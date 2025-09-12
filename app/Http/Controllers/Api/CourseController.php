@@ -181,7 +181,7 @@ class CourseController extends Controller
         ], [
             'completion_percentage' => 0,
             'watch_time_seconds' => 0,
-            'is_completed' => false,
+            'is_completed' => '0',
             'last_watched_at' => now()
         ]);
 
@@ -218,7 +218,7 @@ class CourseController extends Controller
 
         $progress->update([
             'completion_percentage' => 100,
-            'is_completed' => true,
+            'is_completed' => '1',
             'last_watched_at' => now()
         ]);
 
@@ -309,7 +309,7 @@ class CourseController extends Controller
             'user_id' => $user->id,
             'course_id' => $request->course_id,
             'completion_percentage' => 0,
-            'is_completed' => false
+            'is_completed' => '0'
         ]);
 
         return response()->json([
