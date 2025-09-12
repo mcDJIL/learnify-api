@@ -53,8 +53,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/profile/enrolled-courses', [ProfileController::class, 'enrolledCourses']);
 
     Route::post('/quests/finish', [QuestController::class, 'finish']);
-    Route::post('/quests/daily', [QuestController::class, 'daily']);
-    Route::post('/quests/weekly', [QuestController::class, 'weekly']);
+    Route::get('/quests/daily', [QuestController::class, 'daily']);
+    Route::get('/quests/weekly', [QuestController::class, 'weekly']);
 });
 
 // Public routes
