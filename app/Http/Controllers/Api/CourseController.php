@@ -362,4 +362,30 @@ class CourseController extends Controller
             'data' => $progress
         ]);
     }
+
+    /**
+     * Get leaderboard for a quiz
+     */
+    public function leaderboardQuiz(Request $request)
+    {
+        $request->validate([
+            'lesson_id' => 'required|uuid|exists:lessons,id',
+        ]);
+
+        // Ambil semua quiz di lesson ini
+        $quizzes = Quiz::where('lesson_id', $request->lesson_id)->pluck('id');
+
+        // Ambil leaderboard (top 10 skor tertinggi dari semua quiz di lesson ini)
+        $leaderboard = QuizAttempt::with('user')
+            ->whereIn('quiz_id', $quizzes)
+            ->orderBy('score', 'desc')
+            ->limit(10)
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Leaderboard quiz berhasil diambil',
+            'data' => $leaderboard
+        ]);
+    }
 }
