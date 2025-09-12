@@ -45,7 +45,7 @@ class WeeklyQuestCron extends Command
                     'user_id' => $user->id,
                     'quest_id' => $quest->id,
                     'current_progress' => 0,
-                    'is_completed' => false
+                    'is_completed' => '0'
                 ]);
             }
         }
