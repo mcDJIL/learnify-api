@@ -399,16 +399,18 @@ class CourseController extends Controller
             'course_id' => 'required|uuid|exists:courses,id',
         ]);
 
-        // Ambil semua quiz di lesson ini
-        $quizzes = Quiz::whereHas('lesson', function ($query) use ($request) {
-                $query->where('course_id', $request->course_id);
-            })
-            ->pluck('id');
+        // Ambil semua lesson di course ini
+        $lessons = Lesson::where('course_id', $request->course_id)->pluck('id');
 
-        // Ambil leaderboard (top 10 skor tertinggi dari semua quiz di lesson ini)
-        $leaderboard = QuizAttempt::with('user')
+        // Ambil semua quiz dari semua lesson di course ini
+        $quizzes = Quiz::whereIn('lesson_id', $lessons)->pluck('id');
+
+        // Ambil leaderboard (top 10 skor tertinggi dari semua quiz di course ini, total skor per user)
+        $leaderboard = QuizAttempt::selectRaw('user_id, SUM(score) as total_score')
             ->whereIn('quiz_id', $quizzes)
-            ->orderBy('score', 'desc')
+            ->groupBy('user_id')
+            ->orderBy('total_score', 'desc')
+            ->with('user')
             ->limit(10)
             ->get();
 
