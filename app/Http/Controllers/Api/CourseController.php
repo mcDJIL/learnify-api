@@ -10,6 +10,7 @@ use App\Models\Lesson;
 use App\Models\LessonProgress;
 use App\Models\Quiz;
 use App\Models\QuizAttempt;
+use App\Models\UserQuizAnswer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -261,28 +262,27 @@ class CourseController extends Controller
         $answers = $request->answers; // array: [quiz_id => user_answer, ...]
 
         $score = 0;
-        $maxScore = $quizzes->count();
+        $maxScore = $quizzes->count() * 100;
 
         foreach ($quizzes as $quiz) {
             $userAnswer = $answers[$quiz->id] ?? null;
 
-            // Simpan jawaban user (optional, jika ada tabel UserQuizAnswer)
-            // UserQuizAnswer::create([
-            //     'user_id' => $user->id,
-            //     'quiz_id' => $quiz->id,
-            //     'answer' => $userAnswer
-            // ]);
+            UserQuizAnswer::create([
+                'user_id' => $user->id,
+                'quiz_id' => $quiz->id,
+                'answer' => $userAnswer
+            ]);
 
             // Hitung skor
             if ($userAnswer && $userAnswer == $quiz->correct_answer) {
-                $score++;
+                $score += 100;
             }
 
             // Simpan attempt per quiz (optional, jika ingin tracking per soal)
             QuizAttempt::create([
                 'user_id' => $user->id,
                 'quiz_id' => $quiz->id,
-                'score' => $userAnswer == $quiz->correct_answer ? 1 : 0
+                'score' => $userAnswer == $quiz->correct_answer ? 100 : 0
             ]);
         }
 
