@@ -45,7 +45,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/courses/complete-lesson', [CourseController::class, 'completeLesson']);
     Route::post('/courses/complete-quiz', [CourseController::class, 'completeQuiz']);
     Route::post('/courses/complete', [CourseController::class, 'completeCourse']);
-    Route::get('/courses/leaderboard-quiz', [CourseController::class, 'leaderboardQuiz']);
+    Route::get('/courses/leaderboard-quiz/{id}', [CourseController::class, 'leaderboardQuiz']);
 
     Route::post('/favorite-courses', [FavoriteCourseController::class, 'store']);
     Route::get('/favorite-courses', [FavoriteCourseController::class, 'index']);

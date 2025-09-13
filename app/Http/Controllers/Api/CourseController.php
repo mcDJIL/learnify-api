@@ -393,14 +393,12 @@ class CourseController extends Controller
     /**
      * Get leaderboard for a quiz
      */
-    public function leaderboardQuiz(Request $request)
+    public function leaderboardQuiz(Request $request, $id)
     {
-        $request->validate([
-            'course_id' => 'required|uuid|exists:courses,id',
-        ]);
+        $course = Course::findOrFail($id);
 
         // Ambil semua lesson di course ini
-        $lessons = Lesson::where('course_id', $request->course_id)->pluck('id');
+        $lessons = Lesson::where('course_id', $course->id)->pluck('id');
 
         // Ambil semua quiz dari semua lesson di course ini
         $quizzes = Quiz::whereIn('lesson_id', $lessons)->pluck('id');
