@@ -34,7 +34,7 @@ class HomeController extends Controller
             // Get recommended courses based on user preferences
             $recommendedCourses = collect();
             if (!empty($userPreferences)) {
-                $recommendedCoursesQuery = Course::with(['instructor', 'category'])
+                $recommendedCoursesQuery = Course::with(['instructor', 'category', 'lessons'])
                     ->whereIn('category_id', $userPreferences)
                     ->orderBy('rating', 'desc')
                     ->limit(10);
@@ -48,7 +48,7 @@ class HomeController extends Controller
             }
 
             // Get courses user is enrolled in (has progress)
-            $enrolledCoursesQuery = Course::with(['instructor', 'category'])
+            $enrolledCoursesQuery = Course::with(['instructor', 'category', 'lessons'])
                 ->whereHas('progress', function ($query) use ($user) {
                     $query->where('user_id', $user->id);
                 });
@@ -61,7 +61,7 @@ class HomeController extends Controller
             $enrolledCourses = $enrolledCoursesQuery->get();
 
             // Get all courses (default or by category)
-            $allCoursesQuery = Course::with(['instructor', 'category'])
+            $allCoursesQuery = Course::with(['instructor', 'category', 'lessons'])
                 ->orderBy('rating', 'desc')
                 ->orderBy('total_students', 'desc');
 
@@ -70,6 +70,21 @@ class HomeController extends Controller
             }
 
             $allCourses = $allCoursesQuery->get();
+
+            // Tambahkan total video dan total duration (jam) ke setiap course
+            $mapCourse = function ($course) {
+                $totalVideo = $course->lessons->count();
+                $totalDurationMinutes = $course->lessons->sum('duration_minutes');
+                $totalDurationHours = round($totalDurationMinutes / 60, 2);
+
+                $course->total_video = $totalVideo;
+                $course->total_duration_hours = $totalDurationHours;
+                return $course;
+            };
+
+            $recommendedCourses = $recommendedCourses->map($mapCourse);
+            $enrolledCourses = $enrolledCourses->map($mapCourse);
+            $allCourses = $allCourses->map($mapCourse);
 
             return response()->json([
                 'success' => true,
