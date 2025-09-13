@@ -248,35 +248,60 @@ class CourseController extends Controller
     public function completeQuiz(Request $request)
     {
         $request->validate([
-            'quiz_id' => 'required|uuid|exists:quizzes,id',
-            'score' => 'required|numeric'
+            'lesson_id' => 'required|uuid|exists:lessons,id',
+            'answers' => 'required|array'
         ]);
         $user = Auth::user();
 
-        // Simpan attempt quiz
-        QuizAttempt::create([
-            'user_id' => $user->id,
-            'quiz_id' => $request->quiz_id,
-            'score' => $request->score
-        ]);
+        // Ambil semua quiz di lesson ini
+        $quizzes = Quiz::where('lesson_id', $request->lesson_id)
+            ->orderBy('quiz_order', 'asc')
+            ->get();
 
+        $answers = $request->answers; // array: [quiz_id => user_answer, ...]
+
+        $score = 0;
+        $maxScore = $quizzes->count();
+
+        foreach ($quizzes as $quiz) {
+            $userAnswer = $answers[$quiz->id] ?? null;
+
+            // Simpan jawaban user (optional, jika ada tabel UserQuizAnswer)
+            // UserQuizAnswer::create([
+            //     'user_id' => $user->id,
+            //     'quiz_id' => $quiz->id,
+            //     'answer' => $userAnswer
+            // ]);
+
+            // Hitung skor
+            if ($userAnswer && $userAnswer == $quiz->correct_answer) {
+                $score++;
+            }
+
+            // Simpan attempt per quiz (optional, jika ingin tracking per soal)
+            QuizAttempt::create([
+                'user_id' => $user->id,
+                'quiz_id' => $quiz->id,
+                'score' => $userAnswer == $quiz->correct_answer ? 1 : 0
+            ]);
+        }
+
+        // Update quest progress untuk quiz
         QuestController::updateUserQuestProgress($user->id, 'quiz');
 
-        // Ambil lesson terkait quiz ini
-        $lesson = Lesson::where('id', function($q) use ($request) {
-                $q->select('lesson_id')->from('quizzes')->where('id', $request->quiz_id);
-            })->first();
-
         // Ambil lesson berikutnya
+        $lesson = Lesson::findOrFail($request->lesson_id);
         $nextLesson = Lesson::where('course_id', $lesson->course_id)
             ->where('lesson_order', '>', $lesson->lesson_order)
             ->orderBy('lesson_order', 'asc')
             ->first();
 
-        // Ambil leaderboard quiz (top 10 skor tertinggi)
-        $leaderboard = QuizAttempt::with('user')
-            ->where('quiz_id', $request->quiz_id)
-            ->orderBy('score', 'desc')
+        // Ambil leaderboard untuk semua quiz di lesson ini (total skor per user)
+        $leaderboard = QuizAttempt::selectRaw('user_id, SUM(score) as total_score')
+            ->whereIn('quiz_id', $quizzes->pluck('id'))
+            ->groupBy('user_id')
+            ->orderBy('total_score', 'desc')
+            ->with('user')
             ->limit(10)
             ->get();
 
@@ -284,6 +309,8 @@ class CourseController extends Controller
             'success' => true,
             'message' => $nextLesson ? 'Lanjut ke lesson berikutnya' : 'Course selesai',
             'data' => [
+                'score' => $score,
+                'max_score' => $maxScore,
                 'next_lesson' => $nextLesson,
                 'leaderboard' => $leaderboard
             ]
