@@ -116,7 +116,7 @@ class HomeController extends Controller
             $user = Auth::user();
             $searchTerm = $request->get('q', '');
 
-            if (empty($searchTerm) || $searchTerm !== '') {
+            if (empty($searchTerm) || $searchTerm === '') {
                 return response()->json([
                     'success' => false,
                     'message' => 'Search term is required'
