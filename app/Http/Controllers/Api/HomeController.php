@@ -80,7 +80,8 @@ class HomeController extends Controller
                     ->first(function ($lesson) use ($user) {
                         $progress = $lesson->progress()->where('user_id', $user->id)->first();
                         return !$progress || $progress->completion_percentage < 100;
-                    });
+                    })
+                    ->pluck('title')->first() ?? null;
 
                 // Persentase progress course
                 $progressCourse = $totalVideo > 0 ? round(($completedLessons / $totalVideo) * 100, 2) : 0;
@@ -94,7 +95,6 @@ class HomeController extends Controller
             };
 
             $enrolledCourses = $enrolledCourses->map($mapEnrolledCourse);
-
 
             // Get all courses (default or by category)
             $allCoursesQuery = Course::with(['instructor', 'category', 'lessons'])
