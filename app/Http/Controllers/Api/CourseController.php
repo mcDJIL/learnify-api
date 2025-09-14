@@ -138,19 +138,25 @@ class CourseController extends Controller
         // Cek apakah user sudah daftar course
         $isEnrolled = !is_null($progress);
 
+        // Ambil active lesson: lesson order paling kecil dan belum completed
+        $activeLesson = $course->lessons
+            ->sortBy('lesson_order')
+            ->first(function ($lesson) use ($user) {
+                $progress = $lesson->progress()->where('user_id', $user->id)->first();
+                return !$progress || $progress->completion_percentage < 100;
+            });
+
         return response()->json([
             'success' => true,
             'message' => 'Detail kursus berhasil diambil',
             'data' => [
                 'course' => $course,
-                'progress' => $progress,
-                'lessons' => $course->lessons,
                 'rating' => [
                     'average' => $rating ? round($rating, 2) : null,
                     'count' => $rating_count
                 ],
-                'instructor' => $course->instructor,
-                'is_enrolled' => $isEnrolled // true jika sudah daftar, false jika belum
+                'is_enrolled' => $isEnrolled,
+                'active_lesson' => $activeLesson
             ]
         ]);
     }
