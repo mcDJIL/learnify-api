@@ -60,6 +60,42 @@ class HomeController extends Controller
 
             $enrolledCourses = $enrolledCoursesQuery->get();
 
+            $mapEnrolledCourse = function ($course) use ($user) {
+                $totalVideo = $course->lessons->count();
+                $totalDurationMinutes = $course->lessons->sum('duration_minutes');
+                $totalDurationHours = round($totalDurationMinutes / 60, 2);
+
+                // Hitung jumlah lesson yang sudah selesai (progress 100%)
+                $completedLessons = 0;
+                foreach ($course->lessons as $lesson) {
+                    $progress = $lesson->progress()->where('user_id', $user->id)->first();
+                    if ($progress && $progress->completion_percentage == 100) {
+                        $completedLessons++;
+                    }
+                }
+
+                // Cari lesson aktif (belum selesai, urutan paling kecil)
+                $activeLesson = $course->lessons
+                    ->sortBy('lesson_order')
+                    ->first(function ($lesson) use ($user) {
+                        $progress = $lesson->progress()->where('user_id', $user->id)->first();
+                        return !$progress || $progress->completion_percentage < 100;
+                    });
+
+                // Persentase progress course
+                $progressCourse = $totalVideo > 0 ? round(($completedLessons / $totalVideo) * 100, 2) : 0;
+
+                $course->total_video = $totalVideo;
+                $course->total_duration_hours = $totalDurationHours;
+                $course->progress_course = $progressCourse;
+                $course->active_lesson = $activeLesson;
+
+                return $course;
+            };
+
+            $enrolledCourses = $enrolledCourses->map($mapEnrolledCourse);
+
+
             // Get all courses (default or by category)
             $allCoursesQuery = Course::with(['instructor', 'category', 'lessons'])
                 ->orderBy('rating', 'desc')
@@ -135,14 +171,14 @@ class HomeController extends Controller
                     ->whereIn('category_id', $userPreferences)
                     ->where(function ($query) use ($searchTerm) {
                         $query->where('title', 'LIKE', "%{$searchTerm}%")
-                              ->orWhere('description', 'LIKE', "%{$searchTerm}%")
-                              ->orWhere('short_description', 'LIKE', "%{$searchTerm}%")
-                              ->orWhereHas('instructor', function ($q) use ($searchTerm) {
-                                  $q->where('name', 'LIKE', "%{$searchTerm}%");
-                              })
-                              ->orWhereHas('category', function ($q) use ($searchTerm) {
-                                  $q->where('name', 'LIKE', "%{$searchTerm}%");
-                              });
+                            ->orWhere('description', 'LIKE', "%{$searchTerm}%")
+                            ->orWhere('short_description', 'LIKE', "%{$searchTerm}%")
+                            ->orWhereHas('instructor', function ($q) use ($searchTerm) {
+                                $q->where('name', 'LIKE', "%{$searchTerm}%");
+                            })
+                            ->orWhereHas('category', function ($q) use ($searchTerm) {
+                                $q->where('name', 'LIKE', "%{$searchTerm}%");
+                            });
                     })
                     ->orderBy('rating', 'desc')
                     ->limit(10)
@@ -156,14 +192,14 @@ class HomeController extends Controller
                 })
                 ->where(function ($query) use ($searchTerm) {
                     $query->where('title', 'LIKE', "%{$searchTerm}%")
-                          ->orWhere('description', 'LIKE', "%{$searchTerm}%")
-                          ->orWhere('short_description', 'LIKE', "%{$searchTerm}%")
-                          ->orWhereHas('instructor', function ($q) use ($searchTerm) {
-                              $q->where('name', 'LIKE', "%{$searchTerm}%");
-                          })
-                          ->orWhereHas('category', function ($q) use ($searchTerm) {
-                              $q->where('name', 'LIKE', "%{$searchTerm}%");
-                          });
+                        ->orWhere('description', 'LIKE', "%{$searchTerm}%")
+                        ->orWhere('short_description', 'LIKE', "%{$searchTerm}%")
+                        ->orWhereHas('instructor', function ($q) use ($searchTerm) {
+                            $q->where('name', 'LIKE', "%{$searchTerm}%");
+                        })
+                        ->orWhereHas('category', function ($q) use ($searchTerm) {
+                            $q->where('name', 'LIKE', "%{$searchTerm}%");
+                        });
                 })
                 ->get();
 
@@ -171,14 +207,14 @@ class HomeController extends Controller
             $allCourses = Course::with(['instructor', 'category'])
                 ->where(function ($query) use ($searchTerm) {
                     $query->where('title', 'LIKE', "%{$searchTerm}%")
-                          ->orWhere('description', 'LIKE', "%{$searchTerm}%")
-                          ->orWhere('short_description', 'LIKE', "%{$searchTerm}%")
-                          ->orWhereHas('instructor', function ($q) use ($searchTerm) {
-                              $q->where('name', 'LIKE', "%{$searchTerm}%");
-                          })
-                          ->orWhereHas('category', function ($q) use ($searchTerm) {
-                              $q->where('name', 'LIKE', "%{$searchTerm}%");
-                          });
+                        ->orWhere('description', 'LIKE', "%{$searchTerm}%")
+                        ->orWhere('short_description', 'LIKE', "%{$searchTerm}%")
+                        ->orWhereHas('instructor', function ($q) use ($searchTerm) {
+                            $q->where('name', 'LIKE', "%{$searchTerm}%");
+                        })
+                        ->orWhereHas('category', function ($q) use ($searchTerm) {
+                            $q->where('name', 'LIKE', "%{$searchTerm}%");
+                        });
                 })
                 ->orderBy('rating', 'desc')
                 ->orderBy('total_students', 'desc')
