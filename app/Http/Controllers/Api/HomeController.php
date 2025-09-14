@@ -152,22 +152,52 @@ class HomeController extends Controller
             $user = Auth::user();
             $searchTerm = $request->get('q', '');
 
-            if (empty($searchTerm) || $searchTerm === '') {
+            if (empty($searchTerm)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Search term is required'
                 ], 400);
             }
 
-            // Get user's preferred categories for recommended courses
             $userPreferences = UserCategoryPreferences::where('user_id', $user->id)
                 ->pluck('category_id')
                 ->toArray();
 
-            // Search in recommended courses (based on user preferences)
+            // Mapping function (sama seperti index)
+            $mapCourse = function ($course) use ($user) {
+                $totalVideo = $course->lessons->count();
+                $totalDurationMinutes = $course->lessons->sum('duration_minutes');
+                $totalDurationHours = round($totalDurationMinutes / 60, 2);
+
+                // Progress & active lesson (untuk enrolled)
+                $completedLessons = 0;
+                foreach ($course->lessons as $lesson) {
+                    $progress = $lesson->progress()->where('user_id', $user->id)->first();
+                    if ($progress && $progress->completion_percentage == 100) {
+                        $completedLessons++;
+                    }
+                }
+                $activeLesson = $course->lessons
+                    ->sortBy('lesson_order')
+                    ->first(function ($lesson) use ($user) {
+                        $progress = $lesson->progress()->where('user_id', $user->id)->first();
+                        return !$progress || $progress->completion_percentage < 100;
+                    });
+
+                $progressCourse = $totalVideo > 0 ? round(($completedLessons / $totalVideo) * 100, 2) : 0;
+
+                $course->total_video = $totalVideo;
+                $course->total_duration_hours = $totalDurationHours;
+                $course->progress_course = $progressCourse;
+                $course->active_lesson = $activeLesson;
+
+                return $course;
+            };
+
+            // Recommended courses
             $recommendedCourses = collect();
             if (!empty($userPreferences)) {
-                $recommendedCourses = Course::with(['instructor', 'category'])
+                $recommendedCourses = Course::with(['instructor', 'category', 'lessons'])
                     ->whereIn('category_id', $userPreferences)
                     ->where(function ($query) use ($searchTerm) {
                         $query->where('title', 'LIKE', "%{$searchTerm}%")
@@ -185,8 +215,8 @@ class HomeController extends Controller
                     ->get();
             }
 
-            // Search in enrolled courses
-            $enrolledCourses = Course::with(['instructor', 'category'])
+            // Enrolled courses
+            $enrolledCourses = Course::with(['instructor', 'category', 'lessons'])
                 ->whereHas('progress', function ($query) use ($user) {
                     $query->where('user_id', $user->id);
                 })
@@ -203,8 +233,8 @@ class HomeController extends Controller
                 })
                 ->get();
 
-            // Search in all available courses
-            $allCourses = Course::with(['instructor', 'category'])
+            // All courses
+            $allCourses = Course::with(['instructor', 'category', 'lessons'])
                 ->where(function ($query) use ($searchTerm) {
                     $query->where('title', 'LIKE', "%{$searchTerm}%")
                         ->orWhere('description', 'LIKE', "%{$searchTerm}%")
@@ -220,6 +250,11 @@ class HomeController extends Controller
                 ->orderBy('total_students', 'desc')
                 ->limit(20)
                 ->get();
+
+            // Apply mapping
+            $recommendedCourses = $recommendedCourses->map($mapCourse);
+            $enrolledCourses = $enrolledCourses->map($mapCourse);
+            $allCourses = $allCourses->map($mapCourse);
 
             return response()->json([
                 'success' => true,
@@ -247,20 +282,81 @@ class HomeController extends Controller
     public function getCoursesByCategory($categoryId)
     {
         try {
-            $courses = Course::with(['instructor', 'category'])
+            $user = Auth::user();
+
+            $category = Category::findOrFail($categoryId);
+
+            $userPreferences = UserCategoryPreferences::where('user_id', $user->id)
+                ->pluck('category_id')
+                ->toArray();
+
+            $mapCourse = function ($course) use ($user) {
+                $totalVideo = $course->lessons->count();
+                $totalDurationMinutes = $course->lessons->sum('duration_minutes');
+                $totalDurationHours = round($totalDurationMinutes / 60, 2);
+
+                $completedLessons = 0;
+                foreach ($course->lessons as $lesson) {
+                    $progress = $lesson->progress()->where('user_id', $user->id)->first();
+                    if ($progress && $progress->completion_percentage == 100) {
+                        $completedLessons++;
+                    }
+                }
+                $activeLesson = $course->lessons
+                    ->sortBy('lesson_order')
+                    ->first(function ($lesson) use ($user) {
+                        $progress = $lesson->progress()->where('user_id', $user->id)->first();
+                        return !$progress || $progress->completion_percentage < 100;
+                    });
+
+                $progressCourse = $totalVideo > 0 ? round(($completedLessons / $totalVideo) * 100, 2) : 0;
+
+                $course->total_video = $totalVideo;
+                $course->total_duration_hours = $totalDurationHours;
+                $course->progress_course = $progressCourse;
+                $course->active_lesson = $activeLesson;
+
+                return $course;
+            };
+
+            // Recommended courses in this category
+            $recommendedCourses = collect();
+            if (!empty($userPreferences) && in_array($categoryId, $userPreferences)) {
+                $recommendedCourses = Course::with(['instructor', 'category', 'lessons'])
+                    ->where('category_id', $categoryId)
+                    ->orderBy('rating', 'desc')
+                    ->limit(10)
+                    ->get();
+            }
+
+            // Enrolled courses in this category
+            $enrolledCourses = Course::with(['instructor', 'category', 'lessons'])
+                ->where('category_id', $categoryId)
+                ->whereHas('progress', function ($query) use ($user) {
+                    $query->where('user_id', $user->id);
+                })
+                ->get();
+
+            // All courses in this category
+            $allCourses = Course::with(['instructor', 'category', 'lessons'])
                 ->where('category_id', $categoryId)
                 ->orderBy('rating', 'desc')
                 ->orderBy('total_students', 'desc')
                 ->get();
 
-            $category = Category::findOrFail($categoryId);
+            // Apply mapping
+            $recommendedCourses = $recommendedCourses->map($mapCourse);
+            $enrolledCourses = $enrolledCourses->map($mapCourse);
+            $allCourses = $allCourses->map($mapCourse);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Courses by category retrieved successfully',
                 'data' => [
                     'category' => $category,
-                    'courses' => $courses
+                    'recommended_courses' => $recommendedCourses,
+                    'enrolled_courses' => $enrolledCourses,
+                    'all_courses' => $allCourses
                 ]
             ], 200);
 
