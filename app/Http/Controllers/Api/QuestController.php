@@ -131,7 +131,7 @@ class QuestController extends Controller
 
             // Jika sudah mencapai target, tandai selesai
             if ($userQuest->current_progress >= $userQuest->quest->target_value) {
-                $userQuest->is_completed = true;
+                $userQuest->is_completed = '1';
             }
 
             $userQuest->save();
