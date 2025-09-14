@@ -129,13 +129,14 @@ class CourseController extends Controller
         ])->findOrFail($id);
 
         // Ambil rating rata-rata dan jumlah review
-        $rating = CourseReview::where('course_id', $id)
-            ->avg('rating');
-        $rating_count = CourseReview::where('course_id', $id)
-            ->count();
+        $rating = CourseReview::where('course_id', $id)->avg('rating');
+        $rating_count = CourseReview::where('course_id', $id)->count();
 
         // Ambil progress user (hanya satu per user per course)
         $progress = $course->progress->first();
+
+        // Cek apakah user sudah daftar course
+        $isEnrolled = !is_null($progress);
 
         return response()->json([
             'success' => true,
@@ -148,7 +149,8 @@ class CourseController extends Controller
                     'average' => $rating ? round($rating, 2) : null,
                     'count' => $rating_count
                 ],
-                'instructor' => $course->instructor
+                'instructor' => $course->instructor,
+                'is_enrolled' => $isEnrolled // true jika sudah daftar, false jika belum
             ]
         ]);
     }
