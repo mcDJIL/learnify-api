@@ -245,13 +245,13 @@ class CourseController extends Controller
         // Ambil quiz untuk lesson ini
         $quiz = Quiz::where('lesson_id', $request->lesson_id)
             ->orderBy('quiz_order', 'asc')
-            ->first();
+            ->get();
 
         return response()->json([
             'success' => true,
             'message' => 'Lesson selesai, lanjut ke quiz',
             'data' => [
-                'quiz' => $quiz
+                'quizzes' => $quiz
             ]
         ]);
     }
