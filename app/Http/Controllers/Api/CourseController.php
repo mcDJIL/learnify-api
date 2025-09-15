@@ -120,7 +120,9 @@ class CourseController extends Controller
         $course = Course::with([
             'instructor',
             'category',
-            'lessons',
+            'lessons' => function ($query) {
+                $query->orderBy('lesson_order', 'asc');
+            },
             'progress' => function ($query) use ($user) {
                 if ($user) {
                     $query->where('user_id', $user->id);
@@ -140,7 +142,7 @@ class CourseController extends Controller
 
         // Ambil active lesson: lesson order paling kecil dan belum completed
         $activeLesson = $course->lessons
-            ->orderBy('lesson_order', 'asc')
+            ->sortBy('lesson_order')
             ->first(function ($lesson) use ($user) {
                 $progress = $lesson->progress()->where('user_id', $user->id)->first();
                 return !$progress || $progress->completion_percentage < 100;
@@ -152,7 +154,7 @@ class CourseController extends Controller
             'data' => [
                 'course' => $course,
                 'progress' => $progress,
-                'lessons' => $course->lessons,
+                'lessons' => $course->lessons, // Sudah terurut berdasarkan lesson_order
                 'rating' => [
                     'average' => $rating ? round($rating, 2) : null,
                     'count' => $rating_count
