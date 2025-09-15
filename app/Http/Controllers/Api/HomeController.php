@@ -279,12 +279,16 @@ class HomeController extends Controller
     /**
      * Get courses by category
      */
-    public function getCoursesByCategory($categoryId)
+    public function getCoursesByCategory($categoryId = null)
     {
         try {
             $user = Auth::user();
 
-            $category = Category::findOrFail($categoryId);
+            // Jika tidak ada categoryId, ambil semua kategori
+            $category = null;
+            if ($categoryId) {
+                $category = Category::findOrFail($categoryId);
+            }
 
             $userPreferences = UserCategoryPreferences::where('user_id', $user->id)
                 ->pluck('category_id')
@@ -319,27 +323,43 @@ class HomeController extends Controller
                 return $course;
             };
 
-            // Recommended courses in this category
+            // Recommended courses
             $recommendedCourses = collect();
-            if (!empty($userPreferences) && in_array($categoryId, $userPreferences)) {
-                $recommendedCourses = Course::with(['instructor', 'category', 'lessons'])
-                    ->where('category_id', $categoryId)
+            if (!empty($userPreferences)) {
+                $recommendedQuery = Course::with(['instructor', 'category', 'lessons'])
+                    ->whereIn('category_id', $userPreferences);
+            
+                // Jika ada categoryId, filter berdasarkan kategori
+                if ($categoryId) {
+                    $recommendedQuery->where('category_id', $categoryId);
+                }
+            
+                $recommendedCourses = $recommendedQuery
                     ->orderBy('rating', 'desc')
                     ->limit(10)
                     ->get();
             }
 
-            // Enrolled courses in this category
-            $enrolledCourses = Course::with(['instructor', 'category', 'lessons'])
-                ->where('category_id', $categoryId)
+            // Enrolled courses
+            $enrolledQuery = Course::with(['instructor', 'category', 'lessons'])
                 ->whereHas('progress', function ($query) use ($user) {
                     $query->where('user_id', $user->id);
-                })
-                ->get();
+                });
+        
+            if ($categoryId) {
+                $enrolledQuery->where('category_id', $categoryId);
+            }
+        
+            $enrolledCourses = $enrolledQuery->get();
 
-            // All courses in this category
-            $allCourses = Course::with(['instructor', 'category', 'lessons'])
-                ->where('category_id', $categoryId)
+            // All courses
+            $allCoursesQuery = Course::with(['instructor', 'category', 'lessons']);
+        
+            if ($categoryId) {
+                $allCoursesQuery->where('category_id', $categoryId);
+            }
+        
+            $allCourses = $allCoursesQuery
                 ->orderBy('rating', 'desc')
                 ->orderBy('total_students', 'desc')
                 ->get();
@@ -351,7 +371,9 @@ class HomeController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Courses by category retrieved successfully',
+                'message' => $categoryId 
+                    ? 'Courses by category retrieved successfully' 
+                    : 'All recommended courses retrieved successfully',
                 'data' => [
                     'category' => $category,
                     'recommended_courses' => $recommendedCourses,
@@ -363,7 +385,7 @@ class HomeController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to retrieve courses by category',
+                'message' => 'Failed to retrieve courses',
                 'error' => $e->getMessage()
             ], 404);
         }

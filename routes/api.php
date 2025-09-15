@@ -32,7 +32,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Home routes
     Route::get('/home', [HomeController::class, 'index']);
     Route::get('/home/search', [HomeController::class, 'search']);
-    Route::get('/home/category/{categoryId}', [HomeController::class, 'getCoursesByCategory']);
+    Route::get('/home/category/{categoryId?}', [HomeController::class, 'getCoursesByCategory']);
 
     // Course routes
     Route::get('/courses', [CourseController::class, 'index']);
