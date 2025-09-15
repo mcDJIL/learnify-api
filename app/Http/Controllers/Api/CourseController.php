@@ -151,10 +151,13 @@ class CourseController extends Controller
             'message' => 'Detail kursus berhasil diambil',
             'data' => [
                 'course' => $course,
+                'progress' => $progress,
+                'lessons' => $course->lessons,
                 'rating' => [
                     'average' => $rating ? round($rating, 2) : null,
                     'count' => $rating_count
                 ],
+                'instructor' => $course->instructor,
                 'is_enrolled' => $isEnrolled,
                 'active_lesson' => $activeLesson
             ]
