@@ -140,7 +140,7 @@ class CourseController extends Controller
 
         // Ambil active lesson: lesson order paling kecil dan belum completed
         $activeLesson = $course->lessons
-            ->sortBy('lesson_order')
+            ->orderBy('lesson_order', 'asc')
             ->first(function ($lesson) use ($user) {
                 $progress = $lesson->progress()->where('user_id', $user->id)->first();
                 return !$progress || $progress->completion_percentage < 100;
