@@ -148,6 +148,9 @@ class CourseController extends Controller
                 return !$progress || $progress->completion_percentage < 100;
             });
 
+        // Hitung total video (lesson)
+        $totalVideo = $course->lessons->count();
+
         return response()->json([
             'success' => true,
             'message' => 'Detail kursus berhasil diambil',
@@ -155,6 +158,7 @@ class CourseController extends Controller
                 'course' => $course,
                 'progress' => $progress,
                 'lessons' => $course->lessons, // Sudah terurut berdasarkan lesson_order
+                'total_video' => $totalVideo,
                 'rating' => [
                     'average' => $rating ? round($rating, 2) : null,
                     'count' => $rating_count
