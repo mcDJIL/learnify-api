@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Course;
 use App\Models\CourseProgress;
+use App\Models\FavoriteCourse;
 use App\Models\UserCategoryPreferences;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -59,6 +60,18 @@ class HomeController extends Controller
             }
 
             $enrolledCourses = $enrolledCoursesQuery->get();
+
+            // Get favorite courses
+            $favoriteCoursesQuery = Course::with(['instructor', 'category', 'lessons'])
+                ->whereHas('favorites', function ($query) use ($user) {
+                    $query->where('user_id', $user->id);
+                });
+
+            if ($categoryId) {
+                $favoriteCoursesQuery->where('category_id', $categoryId);
+            }
+
+            $favoriteCourses = $favoriteCoursesQuery->get();
 
             $mapEnrolledCourse = function ($course) use ($user) {
                 $totalVideo = $course->lessons->count();
@@ -119,6 +132,7 @@ class HomeController extends Controller
 
             $recommendedCourses = $recommendedCourses->map($mapCourse);
             $enrolledCourses = $enrolledCourses->map($mapCourse);
+            $favoriteCourses = $favoriteCourses->map($mapCourse);
             $allCourses = $allCourses->map($mapCourse);
 
             return response()->json([
@@ -128,6 +142,7 @@ class HomeController extends Controller
                     'categories' => $categories,
                     'recommended_courses' => $recommendedCourses,
                     'enrolled_courses' => $enrolledCourses,
+                    'favorite_courses' => $favoriteCourses,
                     'all_courses' => $allCourses,
                     'user_preferences' => $userPreferences
                 ]
@@ -143,7 +158,7 @@ class HomeController extends Controller
     }
 
     /**
-     * Search courses (recommended, enrolled, and all available)
+     * Search courses (recommended, enrolled, favorite, and all available)
      */
     public function search(Request $request)
     {
@@ -232,6 +247,24 @@ class HomeController extends Controller
                 })
                 ->get();
 
+            // Favorite courses
+            $favoriteCourses = Course::with(['instructor', 'category', 'lessons'])
+                ->whereHas('favorites', function ($query) use ($user) {
+                    $query->where('user_id', $user->id);
+                })
+                ->where(function ($query) use ($searchTerm) {
+                    $query->where('title', 'LIKE', "%{$searchTerm}%")
+                        ->orWhere('description', 'LIKE', "%{$searchTerm}%")
+                        ->orWhere('short_description', 'LIKE', "%{$searchTerm}%")
+                        ->orWhereHas('instructor', function ($q) use ($searchTerm) {
+                            $q->where('name', 'LIKE', "%{$searchTerm}%");
+                        })
+                        ->orWhereHas('category', function ($q) use ($searchTerm) {
+                            $q->where('name', 'LIKE', "%{$searchTerm}%");
+                        });
+                })
+                ->get();
+
             // All courses
             $allCourses = Course::with(['instructor', 'category', 'lessons'])
                 ->where(function ($query) use ($searchTerm) {
@@ -253,6 +286,7 @@ class HomeController extends Controller
             // Apply mapping
             $recommendedCourses = $recommendedCourses->map($mapCourse);
             $enrolledCourses = $enrolledCourses->map($mapCourse);
+            $favoriteCourses = $favoriteCourses->map($mapCourse);
             $allCourses = $allCourses->map($mapCourse);
 
             return response()->json([
@@ -261,6 +295,7 @@ class HomeController extends Controller
                 'data' => [
                     'recommended_courses' => $recommendedCourses,
                     'enrolled_courses' => $enrolledCourses,
+                    'favorite_courses' => $favoriteCourses,
                     'all_courses' => $allCourses
                 ],
                 'search_term' => $searchTerm
@@ -354,41 +389,55 @@ class HomeController extends Controller
                     $query->where('user_id', $user->id);
                 });
     
-        if ($categoryId) {
-            $enrolledQuery->where('category_id', $categoryId);
-        }
+            if ($categoryId) {
+                $enrolledQuery->where('category_id', $categoryId);
+            }
     
-        $enrolledCourses = $enrolledQuery->get();
+            $enrolledCourses = $enrolledQuery->get();
 
-        // All courses
-        $allCoursesQuery = Course::with(['instructor', 'category', 'lessons']);
+            // Favorite courses
+            $favoriteQuery = Course::with(['instructor', 'category', 'lessons'])
+                ->whereHas('favorites', function ($query) use ($user) {
+                    $query->where('user_id', $user->id);
+                });
+
+            if ($categoryId) {
+                $favoriteQuery->where('category_id', $categoryId);
+            }
+
+            $favoriteCourses = $favoriteQuery->get();
+
+            // All courses
+            $allCoursesQuery = Course::with(['instructor', 'category', 'lessons']);
     
-        if ($categoryId) {
-            $allCoursesQuery->where('category_id', $categoryId);
-        }
+            if ($categoryId) {
+                $allCoursesQuery->where('category_id', $categoryId);
+            }
     
-        $allCourses = $allCoursesQuery
-            ->orderBy('rating', 'desc')
-            ->orderBy('total_students', 'desc')
-            ->get();
+            $allCourses = $allCoursesQuery
+                ->orderBy('rating', 'desc')
+                ->orderBy('total_students', 'desc')
+                ->get();
 
-        // Apply mapping
-        $recommendedCourses = $recommendedCourses->map($mapCourse);
-        $enrolledCourses = $enrolledCourses->map($mapCourse);
-        $allCourses = $allCourses->map($mapCourse);
+            // Apply mapping
+            $recommendedCourses = $recommendedCourses->map($mapCourse);
+            $enrolledCourses = $enrolledCourses->map($mapCourse);
+            $favoriteCourses = $favoriteCourses->map($mapCourse);
+            $allCourses = $allCourses->map($mapCourse);
 
-        return response()->json([
-            'success' => true,
-            'message' => $categoryId 
-                ? 'Courses by category retrieved successfully' 
-                : 'All recommended courses retrieved successfully',
-            'data' => [
-                'category' => $category,
-                'recommended_courses' => $recommendedCourses,
-                'enrolled_courses' => $enrolledCourses,
-                'all_courses' => $allCourses
-            ]
-        ], 200);
+            return response()->json([
+                'success' => true,
+                'message' => $categoryId 
+                    ? 'Courses by category retrieved successfully' 
+                    : 'All recommended courses retrieved successfully',
+                'data' => [
+                    'category' => $category,
+                    'recommended_courses' => $recommendedCourses,
+                    'enrolled_courses' => $enrolledCourses,
+                    'favorite_courses' => $favoriteCourses,
+                    'all_courses' => $allCourses
+                ]
+            ], 200);
 
         } catch (\Exception $e) {
             return response()->json([

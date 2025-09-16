@@ -53,4 +53,9 @@ class Course extends Model
     {
         return $this->hasMany(\App\Models\CourseProgress::class, 'course_id');
     }
+
+    public function favorites()
+    {
+        return $this->hasMany(FavoriteCourse::class);
+    }
 }
