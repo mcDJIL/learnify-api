@@ -441,4 +441,76 @@ class CourseController extends Controller
             'data' => $leaderboard
         ]);
     }
+
+    /**
+     * Set active lesson for user
+     */
+    public function setActiveLesson(Request $request)
+    {
+        $request->validate([
+            'lesson_id' => 'required|uuid|exists:lessons,id',
+        ]);
+
+        $user = Auth::user();
+        $lesson = Lesson::with('course')->findOrFail($request->lesson_id);
+
+        // Cek apakah user sudah enrolled di course ini
+        $courseProgress = CourseProgress::where('user_id', $user->id)
+            ->where('course_id', $lesson->course_id)
+            ->first();
+
+        if (!$courseProgress) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda belum terdaftar di kursus ini'
+            ], 403);
+        }
+
+        // Cek apakah lesson sebelumnya sudah selesai (jika ada)
+        $previousLessons = Lesson::where('course_id', $lesson->course_id)
+            ->where('lesson_order', '<', $lesson->lesson_order)
+            ->orderBy('lesson_order', 'asc')
+            ->get();
+
+        foreach ($previousLessons as $prevLesson) {
+            $prevProgress = LessonProgress::where('user_id', $user->id)
+                ->where('lesson_id', $prevLesson->id)
+                ->first();
+
+            if (!$prevProgress || $prevProgress->completion_percentage < 100) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda harus menyelesaikan lesson sebelumnya terlebih dahulu'
+                ], 403);
+            }
+        }
+
+        // Buat atau update progress lesson yang dipilih
+        $lessonProgress = LessonProgress::firstOrCreate([
+            'user_id' => $user->id,
+            'lesson_id' => $lesson->id
+        ], [
+            'completion_percentage' => 0,
+            'watch_time_seconds' => 0,
+            'is_completed' => '0',
+            'last_watched_at' => now()
+        ]);
+
+        // Update last_watched_at jika sudah ada
+        if (!$lessonProgress->wasRecentlyCreated) {
+            $lessonProgress->update([
+                'last_watched_at' => now()
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Active lesson berhasil diubah',
+            'data' => [
+                'lesson' => $lesson,
+                'progress' => $lessonProgress,
+                'lesson_order' => $lesson->lesson_order
+            ]
+        ]);
+    }
 }
