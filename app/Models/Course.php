@@ -58,4 +58,9 @@ class Course extends Model
     {
         return $this->hasMany(FavoriteCourse::class);
     }
+
+    public function reviews()
+    {
+        return $this->hasMany(CourseReview::class);
+    }
 }
