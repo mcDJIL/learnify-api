@@ -62,4 +62,35 @@ class FavoriteCourseController extends Controller
             'data' => $favorites
         ]);
     }
+
+    /**
+     * Remove course from favorites
+     */
+    public function destroy(Request $request)
+    {
+        $request->validate([
+            'course_id' => 'required|uuid|exists:courses,id',
+        ]);
+
+        $user = Auth::user();
+
+        // Cari favorite course
+        $favorite = FavoriteCourse::where('user_id', $user->id)
+            ->where('course_id', $request->course_id)
+            ->first();
+
+        if (!$favorite) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kursus tidak ditemukan di favorit'
+            ], 404);
+        }
+
+        $favorite->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Kursus berhasil dihapus dari favorit'
+        ]);
+    }
 }
