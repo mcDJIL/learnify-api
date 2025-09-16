@@ -322,21 +322,30 @@ class HomeController extends Controller
                 return $course;
             };
 
-            // Recommended courses
+            // Recommended courses - hanya jika user punya preferences
             $recommendedCourses = collect();
             if (!empty($userPreferences)) {
                 $recommendedQuery = Course::with(['instructor', 'category', 'lessons'])
                     ->whereIn('category_id', $userPreferences);
-            
-                // Jika ada categoryId, filter berdasarkan kategori
+        
+                // Jika ada categoryId, pastikan juga kategori tersebut ada di preferences
                 if ($categoryId) {
-                    $recommendedQuery->where('category_id', $categoryId);
+                    // Hanya tampilkan jika categoryId ada di user preferences
+                    if (in_array($categoryId, $userPreferences)) {
+                        $recommendedQuery->where('category_id', $categoryId);
+                    } else {
+                        // Jika categoryId tidak ada di preferences, kosongkan recommended
+                        $recommendedCourses = collect();
+                    }
                 }
-            
-                $recommendedCourses = $recommendedQuery
-                    ->orderBy('rating', 'desc')
-                    ->limit(10)
-                    ->get();
+        
+                // Jika tidak ada categoryId atau categoryId ada di preferences
+                if (!$categoryId || ($categoryId && in_array($categoryId, $userPreferences))) {
+                    $recommendedCourses = $recommendedQuery
+                        ->orderBy('rating', 'desc')
+                        ->limit(10)
+                        ->get();
+                }
             }
 
             // Enrolled courses
@@ -344,42 +353,42 @@ class HomeController extends Controller
                 ->whereHas('progress', function ($query) use ($user) {
                     $query->where('user_id', $user->id);
                 });
-        
-            if ($categoryId) {
-                $enrolledQuery->where('category_id', $categoryId);
-            }
-        
-            $enrolledCourses = $enrolledQuery->get();
+    
+        if ($categoryId) {
+            $enrolledQuery->where('category_id', $categoryId);
+        }
+    
+        $enrolledCourses = $enrolledQuery->get();
 
-            // All courses
-            $allCoursesQuery = Course::with(['instructor', 'category', 'lessons']);
-        
-            if ($categoryId) {
-                $allCoursesQuery->where('category_id', $categoryId);
-            }
-        
-            $allCourses = $allCoursesQuery
-                ->orderBy('rating', 'desc')
-                ->orderBy('total_students', 'desc')
-                ->get();
+        // All courses
+        $allCoursesQuery = Course::with(['instructor', 'category', 'lessons']);
+    
+        if ($categoryId) {
+            $allCoursesQuery->where('category_id', $categoryId);
+        }
+    
+        $allCourses = $allCoursesQuery
+            ->orderBy('rating', 'desc')
+            ->orderBy('total_students', 'desc')
+            ->get();
 
-            // Apply mapping
-            $recommendedCourses = $recommendedCourses->map($mapCourse);
-            $enrolledCourses = $enrolledCourses->map($mapCourse);
-            $allCourses = $allCourses->map($mapCourse);
+        // Apply mapping
+        $recommendedCourses = $recommendedCourses->map($mapCourse);
+        $enrolledCourses = $enrolledCourses->map($mapCourse);
+        $allCourses = $allCourses->map($mapCourse);
 
-            return response()->json([
-                'success' => true,
-                'message' => $categoryId 
-                    ? 'Courses by category retrieved successfully' 
-                    : 'All recommended courses retrieved successfully',
-                'data' => [
-                    'category' => $category,
-                    'recommended_courses' => $recommendedCourses,
-                    'enrolled_courses' => $enrolledCourses,
-                    'all_courses' => $allCourses
-                ]
-            ], 200);
+        return response()->json([
+            'success' => true,
+            'message' => $categoryId 
+                ? 'Courses by category retrieved successfully' 
+                : 'All recommended courses retrieved successfully',
+            'data' => [
+                'category' => $category,
+                'recommended_courses' => $recommendedCourses,
+                'enrolled_courses' => $enrolledCourses,
+                'all_courses' => $allCourses
+            ]
+        ], 200);
 
         } catch (\Exception $e) {
             return response()->json([
