@@ -231,6 +231,8 @@ class CourseController extends Controller
             'lesson_id' => 'required|uuid|exists:lessons,id',
         ]);
         $user = Auth::user();
+        
+        $lesson = Lesson::findOrFail($request->lesson_id);
        
         $progress = LessonProgress::where('user_id', $user->id)
             ->where('lesson_id', $request->lesson_id)
@@ -249,8 +251,13 @@ class CourseController extends Controller
             'last_watched_at' => now()
         ]);
 
+        $lesson->update([
+            'is_completed' => '1'
+        ]);
+
         // Update quest progress untuk lesson
-        QuestController::updateUserQuestProgress($user->id, 'lesson');
+        QuestController::updateUserQuestProgress($user->id, 'daily');
+        QuestController::updateUserQuestProgress($user->id, 'weekly');
 
         // Ambil quiz untuk lesson ini
         $quiz = Quiz::where('lesson_id', $request->lesson_id)
@@ -310,7 +317,8 @@ class CourseController extends Controller
         }
 
         // Update quest progress untuk quiz
-        QuestController::updateUserQuestProgress($user->id, 'quiz');
+        QuestController::updateUserQuestProgress($user->id, 'daily');
+        QuestController::updateUserQuestProgress($user->id, 'weekly');
 
         // Ambil lesson berikutnya
         $lesson = Lesson::findOrFail($request->lesson_id);
@@ -388,6 +396,8 @@ class CourseController extends Controller
 
         $user = Auth::user();
 
+        $course = Course::findOrFail($request->course_id);
+
         $progress = CourseProgress::where('user_id', $user->id)
             ->where('course_id', $request->course_id)
             ->first();
@@ -404,7 +414,12 @@ class CourseController extends Controller
             'is_completed' => true
         ]);
 
-        QuestController::updateUserQuestProgress($user->id, 'course');
+        $course->update([
+            'is_completed' => '1'
+        ]);
+
+        QuestController::updateUserQuestProgress($user->id, 'daily');
+        QuestController::updateUserQuestProgress($user->id, 'weekly');
 
         return response()->json([
             'success' => true,
