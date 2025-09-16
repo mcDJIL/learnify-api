@@ -466,40 +466,49 @@ class CourseController extends Controller
             ], 403);
         }
 
-        // Cek apakah lesson sebelumnya sudah selesai (jika ada)
-        $previousLessons = Lesson::where('course_id', $lesson->course_id)
-            ->where('lesson_order', '<', $lesson->lesson_order)
-            ->orderBy('lesson_order', 'asc')
-            ->get();
+        // Cek progress lesson yang ingin diakses
+        $lessonProgress = LessonProgress::where('user_id', $user->id)
+            ->where('lesson_id', $lesson->id)
+            ->first();
 
-        foreach ($previousLessons as $prevLesson) {
-            $prevProgress = LessonProgress::where('user_id', $user->id)
-                ->where('lesson_id', $prevLesson->id)
-                ->first();
-
-            if (!$prevProgress || $prevProgress->completion_percentage < 100) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Anda harus menyelesaikan lesson sebelumnya terlebih dahulu'
-                ], 403);
-            }
+        if (!$lessonProgress) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lesson progress tidak ditemukan'
+            ], 404);
         }
 
-        // Buat atau update progress lesson yang dipilih
-        $lessonProgress = LessonProgress::firstOrCreate([
-            'user_id' => $user->id,
-            'lesson_id' => $lesson->id
-        ], [
-            'completion_percentage' => 0,
-            'watch_time_seconds' => 0,
-            'is_completed' => '0',
-            'last_watched_at' => now()
-        ]);
-
-        // Update last_watched_at jika sudah ada
-        if (!$lessonProgress->wasRecentlyCreated) {
+        // Jika lesson order = 1, langsung bisa akses
+        if ($lesson->lesson_order == 1) {
             $lessonProgress->update([
-                'last_watched_at' => now()
+                'last_watched_at' => now(),
+                'completion_percentage' => 0,
+                'is_completed' => '0'
+            ]);
+        } else {
+            // Untuk lesson order > 1, cek lesson sebelumnya
+            $prevLesson = Lesson::where('course_id', $lesson->course_id)
+                ->where('lesson_order', $lesson->lesson_order - 1)
+                ->first();
+
+            if ($prevLesson) {
+                $prevProgress = LessonProgress::where('user_id', $user->id)
+                    ->where('lesson_id', $prevLesson->id)
+                    ->first();
+
+                if (!$prevProgress || $prevProgress->completion_percentage < 100) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Anda harus menyelesaikan lesson sebelumnya terlebih dahulu'
+                    ], 403);
+                }
+            }
+
+            // Update lesson progress yang dipilih
+            $lessonProgress->update([
+                'last_watched_at' => now(),
+                'completion_percentage' => 0,
+                'is_completed' => '0'
             ]);
         }
 
