@@ -50,7 +50,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/favorite-courses', [FavoriteCourseController::class, 'store']);
     Route::get('/favorite-courses', [FavoriteCourseController::class, 'index']);
-    Route::delete('/favorites-courses', [FavoriteCourseController::class, 'destroy']);
+    Route::delete('/favorites-courses/{id}', [FavoriteCourseController::class, 'destroy']);
 
 
     Route::get('/profile', [ProfileController::class, 'show']);

@@ -66,17 +66,22 @@ class FavoriteCourseController extends Controller
     /**
      * Remove course from favorites
      */
-    public function destroy(Request $request)
+    public function destroy(Request $request, $id)
     {
-        $request->validate([
-            'course_id' => 'required|uuid|exists:courses,id',
-        ]);
+        $course = Course::findOrFail($id);
+
+        if (!$course) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kursus tidak ditemukan'
+            ], 404);
+        }
 
         $user = Auth::user();
 
         // Cari favorite course
         $favorite = FavoriteCourse::where('user_id', $user->id)
-            ->where('course_id', $request->course_id)
+            ->where('course_id', $course->id)
             ->first();
 
         if (!$favorite) {
