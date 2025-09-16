@@ -157,13 +157,29 @@ class CourseController extends Controller
         // Hitung total video (lesson)
         $totalVideo = $course->lessons->count();
 
+        // Tambahkan progress ke setiap lesson
+        $lessonsWithProgress = $course->lessons->map(function ($lesson) use ($user) {
+            $lessonProgress = LessonProgress::where('user_id', $user->id)
+                ->where('lesson_id', $lesson->id)
+                ->first();
+
+            $lesson->progress = $lessonProgress ? [
+                'completion_percentage' => $lessonProgress->completion_percentage,
+                'watch_time_seconds' => $lessonProgress->watch_time_seconds,
+                'is_completed' => $lessonProgress->is_completed,
+                'last_watched_at' => $lessonProgress->last_watched_at
+            ] : null;
+
+            return $lesson;
+        });
+
         return response()->json([
             'success' => true,
             'message' => 'Detail kursus berhasil diambil',
             'data' => [
                 'course' => $course,
                 'progress' => $progress,
-                'lessons' => $course->lessons, // Sudah terurut berdasarkan lesson_order
+                'lessons' => $lessonsWithProgress, // Lesson dengan progress masing-masing
                 'total_video' => $totalVideo,
                 'rating' => [
                     'average' => $rating ? round($rating, 2) : null,
