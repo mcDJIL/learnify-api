@@ -140,13 +140,19 @@ class CourseController extends Controller
         // Cek apakah user sudah daftar course
         $isEnrolled = !is_null($progress);
 
-        // Ambil active lesson: lesson order paling kecil dan belum completed
-        $activeLesson = $course->lessons
-            ->sortBy('lesson_order')
-            ->first(function ($lesson) use ($user) {
-                $progress = $lesson->progress()->where('user_id', $user->id)->first();
-                return !$progress || $progress->completion_percentage < 100;
-            });
+        // Ambil active lesson: lesson dengan order paling kecil yang belum completed
+        $activeLesson = null;
+        foreach ($course->lessons as $lesson) {
+            $lessonProgress = LessonProgress::where('user_id', $user->id)
+                ->where('lesson_id', $lesson->id)
+                ->first();
+            
+            // Jika lesson belum ada progress atau completion_percentage < 100
+            if (!$lessonProgress || $lessonProgress->completion_percentage < 100) {
+                $activeLesson = $lesson;
+                break; // Ambil lesson pertama yang belum selesai
+            }
+        }
 
         // Hitung total video (lesson)
         $totalVideo = $course->lessons->count();
@@ -225,7 +231,7 @@ class CourseController extends Controller
             'lesson_id' => 'required|uuid|exists:lessons,id',
         ]);
         $user = Auth::user();
-
+       
         $progress = LessonProgress::where('user_id', $user->id)
             ->where('lesson_id', $request->lesson_id)
             ->first();
