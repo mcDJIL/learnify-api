@@ -464,6 +464,7 @@ class CourseController extends Controller
             ->whereIn('quiz_id', $quizzes)
             ->groupBy('user_id')
             ->orderBy('total_score', 'desc')
+            ->orderBy('time', 'asc')
             ->with('user')
             ->limit(10)
             ->get();
