@@ -296,7 +296,8 @@ class CourseController extends Controller
     {
         $request->validate([
             'lesson_id' => 'required|uuid|exists:lessons,id',
-            'answers' => 'required|array'
+            'answers' => 'required|array',
+            'time' => 'required|integer|min:1' // waktu dalam detik
         ]);
         $user = Auth::user();
 
@@ -328,7 +329,8 @@ class CourseController extends Controller
             QuizAttempt::create([
                 'user_id' => $user->id,
                 'quiz_id' => $quiz->id,
-                'score' => $userAnswer == $quiz->correct_answer ? 100 : 0
+                'score' => $userAnswer == $quiz->correct_answer ? 100 : 0,
+                'time' => $request->time
             ]);
         }
 
