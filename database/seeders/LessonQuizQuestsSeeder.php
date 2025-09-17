@@ -26,7 +26,7 @@ class LessonQuizQuestsSeeder extends Seeder
                 'id' => (string) Str::uuid(),
                 'course_id' => $reactCourse->id,
                 'title' => 'Pengenalan React JS',
-                'video_url' => 'https://dummyvideo.com/react-intro.mp4',
+                'video_url' => 'https://youtu.be/AYb7l6XDlPo?si=YA_BCzHw3AbyqB65',
                 'duration_minutes' => 20,
                 'lesson_order' => 1,
                 'is_completed' => '0'
@@ -35,7 +35,7 @@ class LessonQuizQuestsSeeder extends Seeder
                 'id' => (string) Str::uuid(),
                 'course_id' => $reactCourse->id,
                 'title' => 'Component dan JSX',
-                'video_url' => 'https://dummyvideo.com/react-jsx.mp4',
+                'video_url' => 'https://youtu.be/TK451YJLaZg?si=KJvASi1t1be6JFzc',
                 'duration_minutes' => 25,
                 'lesson_order' => 2,
                 'is_completed' => '0'
@@ -44,7 +44,7 @@ class LessonQuizQuestsSeeder extends Seeder
                 'id' => (string) Str::uuid(),
                 'course_id' => $reactCourse->id,
                 'title' => 'State dan Props',
-                'video_url' => 'https://dummyvideo.com/react-state-props.mp4',
+                'video_url' => 'https://youtu.be/BgapZ6Cqy3s?si=skSJviETHf8Ciyov',
                 'duration_minutes' => 30,
                 'lesson_order' => 3,
                 'is_completed' => '0'
@@ -53,7 +53,7 @@ class LessonQuizQuestsSeeder extends Seeder
                 'id' => (string) Str::uuid(),
                 'course_id' => $reactCourse->id,
                 'title' => 'Event Handling',
-                'video_url' => 'https://dummyvideo.com/react-events.mp4',
+                'video_url' => 'https://youtu.be/jgcyqcF6n9U?si=BjgX6RpSWVa9rxNA',
                 'duration_minutes' => 22,
                 'lesson_order' => 4,
                 'is_completed' => '0'
@@ -62,7 +62,7 @@ class LessonQuizQuestsSeeder extends Seeder
                 'id' => (string) Str::uuid(),
                 'course_id' => $reactCourse->id,
                 'title' => 'React Hooks',
-                'video_url' => 'https://dummyvideo.com/react-hooks.mp4',
+                'video_url' => 'https://youtu.be/kRT1RiDklqc?si=wIEWzuH6GP6Z5bpL',
                 'duration_minutes' => 35,
                 'lesson_order' => 5,
                 'is_completed' => '0'
