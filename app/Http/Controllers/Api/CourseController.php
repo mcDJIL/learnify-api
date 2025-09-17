@@ -488,12 +488,12 @@ class CourseController extends Controller
         // Ambil semua quiz dari semua lesson di course ini
         $quizzes = Quiz::whereIn('lesson_id', $lessons)->pluck('id');
 
-        // Ambil leaderboard (top 10 skor tertinggi dari semua quiz di course ini, total skor per user)
-        $leaderboard = QuizAttempt::selectRaw('user_id, SUM(score) as total_score')
+        // Ambil leaderboard dengan agregat yang benar
+        $leaderboard = QuizAttempt::selectRaw('user_id, SUM(score) as total_score, MIN(time) as best_time')
             ->whereIn('quiz_id', $quizzes)
             ->groupBy('user_id')
             ->orderBy('total_score', 'desc')
-            ->orderBy('time', 'asc')
+            ->orderBy('best_time', 'asc') // Gunakan best_time yang sudah diagregat
             ->with('user')
             ->limit(10)
             ->get();
