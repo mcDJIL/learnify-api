@@ -16,11 +16,11 @@ class CategorySeeder extends Seeder
         $categories = [
             [
                 'id' => (string) Str::uuid(),
-                'name' => 'Programming'
+                'name' => 'Backend Development'
             ],
             [
                 'id' => (string) Str::uuid(),
-                'name' => 'Web Development'
+                'name' => 'Frontend Development'
             ],
             [
                 'id' => (string) Str::uuid(),
@@ -28,32 +28,12 @@ class CategorySeeder extends Seeder
             ],
             [
                 'id' => (string) Str::uuid(),
-                'name' => 'Data Science'
-            ],
-            [
-                'id' => (string) Str::uuid(),
                 'name' => 'UI/UX Design'
             ],
             [
                 'id' => (string) Str::uuid(),
-                'name' => 'Digital Marketing'
+                'name' => 'Machine Learning'
             ],
-            [
-                'id' => (string) Str::uuid(),
-                'name' => 'Business'
-            ],
-            [
-                'id' => (string) Str::uuid(),
-                'name' => 'Photography'
-            ],
-            [
-                'id' => (string) Str::uuid(),
-                'name' => 'Language Learning'
-            ],
-            [
-                'id' => (string) Str::uuid(),
-                'name' => 'Music'
-            ]
         ];
 
         foreach ($categories as $category) {

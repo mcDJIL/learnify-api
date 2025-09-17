@@ -225,6 +225,9 @@ class CourseController extends Controller
             'last_watched_at' => now()
         ]);
 
+        // Update quest progress untuk menonton video
+        QuestController::updateUserQuestProgress($user->id, 'weekly', 'watch_video');
+
         return response()->json([
             'success' => true,
             'message' => 'Mulai lesson',
@@ -271,9 +274,9 @@ class CourseController extends Controller
             'is_completed' => '1'
         ]);
 
-        // Update quest progress untuk lesson
-        QuestController::updateUserQuestProgress($user->id, 'daily');
-        QuestController::updateUserQuestProgress($user->id, 'weekly');
+        // Update quest progress untuk lesson dan video
+        QuestController::updateUserQuestProgress($user->id, 'daily', 'complete_lesson');
+        QuestController::updateUserQuestProgress($user->id, 'weekly', 'watch_video');
 
         // Ambil quiz untuk lesson ini
         $quiz = Quiz::where('lesson_id', $request->lesson_id)
@@ -363,8 +366,7 @@ class CourseController extends Controller
         }
 
         // Update quest progress untuk quiz
-        QuestController::updateUserQuestProgress($user->id, 'daily');
-        QuestController::updateUserQuestProgress($user->id, 'weekly');
+        QuestController::updateUserQuestProgress($user->id, 'daily', 'complete_quiz');
 
         // Ambil lesson berikutnya
         $lesson = Lesson::findOrFail($request->lesson_id);
@@ -405,6 +407,11 @@ class CourseController extends Controller
         ]);
 
         $user = Auth::user();
+
+        $course = Course::findOrFail($request->course_id);
+
+        $course->increment('total_students');
+        $course->save();
 
         // Cek apakah user sudah pernah daftar course ini
         $exists = CourseProgress::where('user_id', $user->id)
@@ -465,8 +472,9 @@ class CourseController extends Controller
             'is_completed' => '1'
         ]);
 
-        QuestController::updateUserQuestProgress($user->id, 'daily');
-        QuestController::updateUserQuestProgress($user->id, 'weekly');
+        // Update quest progress untuk course
+        QuestController::updateUserQuestProgress($user->id, 'daily', 'complete_course');
+        QuestController::updateUserQuestProgress($user->id, 'weekly', 'complete_course');
 
         return response()->json([
             'success' => true,

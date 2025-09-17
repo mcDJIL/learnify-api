@@ -112,9 +112,9 @@ class QuestController extends Controller
     }
 
     /**
-     * Update user quest progress
+     * Update user quest progress based on specific activity
      */
-    public static function updateUserQuestProgress($userId, $type)
+    public static function updateUserQuestProgress($userId, $type, $activity = null)
     {
         // Ambil semua quest user yang belum selesai dan sesuai tipe
         $userQuests = UserQuest::with('quest')
@@ -126,15 +126,52 @@ class QuestController extends Controller
             ->get();
 
         foreach ($userQuests as $userQuest) {
-            // Update progress
-            $userQuest->current_progress += 1;
+            $questTitle = $userQuest->quest->title;
+            $shouldUpdate = false;
 
-            // Jika sudah mencapai target, tandai selesai
-            if ($userQuest->current_progress >= $userQuest->quest->target_value) {
-                $userQuest->is_completed = '1';
+            // Cek apakah quest sesuai dengan aktivitas yang dilakukan
+            switch ($activity) {
+                case 'complete_course':
+                    if (str_contains($questTitle, 'Selesaikan') && str_contains($questTitle, 'Kursus')) {
+                        $shouldUpdate = true;
+                    }
+                    break;
+                    
+                case 'complete_quiz':
+                    if (str_contains($questTitle, 'Selesaikan') && str_contains($questTitle, 'Quiz')) {
+                        $shouldUpdate = true;
+                    }
+                    break;
+                    
+                case 'complete_lesson':
+                    if (str_contains($questTitle, 'Selesaikan') && str_contains($questTitle, 'Lesson')) {
+                        $shouldUpdate = true;
+                    }
+                    break;
+                    
+                case 'watch_video':
+                    if (str_contains($questTitle, 'Tonton') && str_contains($questTitle, 'Video')) {
+                        $shouldUpdate = true;
+                    }
+                    break;
+                    
+                default:
+                    // Jika tidak ada aktivitas spesifik, update semua quest (backward compatibility)
+                    $shouldUpdate = true;
+                    break;
             }
 
-            $userQuest->save();
+            if ($shouldUpdate) {
+                // Update progress
+                $userQuest->current_progress += 1;
+
+                // Jika sudah mencapai target, tandai selesai
+                if ($userQuest->current_progress >= $userQuest->quest->target_value) {
+                    $userQuest->is_completed = true;
+                }
+
+                $userQuest->save();
+            }
         }
     }
 }
