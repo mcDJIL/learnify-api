@@ -314,24 +314,52 @@ class CourseController extends Controller
         foreach ($quizzes as $quiz) {
             $userAnswer = $answers[$quiz->id] ?? null;
 
-            UserQuizAnswer::create([
-                'user_id' => $user->id,
-                'quiz_id' => $quiz->id,
-                'answer' => $userAnswer
-            ]);
+            // Cek apakah user sudah pernah menjawab quiz ini
+            $existingAnswer = UserQuizAnswer::where('user_id', $user->id)
+                ->where('quiz_id', $quiz->id)
+                ->first();
+
+            if ($existingAnswer) {
+                // Update jawaban yang sudah ada
+                $existingAnswer->update([
+                    'answer' => $userAnswer
+                ]);
+            } else {
+                // Buat jawaban baru
+                UserQuizAnswer::create([
+                    'user_id' => $user->id,
+                    'quiz_id' => $quiz->id,
+                    'answer' => $userAnswer
+                ]);
+            }
 
             // Hitung skor
-            if ($userAnswer && $userAnswer == $quiz->correct_answer) {
+            $isCorrect = $userAnswer && $userAnswer == $quiz->correct_answer;
+            if ($isCorrect) {
                 $score += 100;
             }
 
-            // Simpan attempt per quiz (optional, jika ingin tracking per soal)
-            QuizAttempt::create([
-                'user_id' => $user->id,
-                'quiz_id' => $quiz->id,
-                'score' => $userAnswer == $quiz->correct_answer ? 100 : 0,
-                'time' => $request->time
-            ]);
+            // Cek apakah user sudah pernah attempt quiz ini
+            $existingAttempt = QuizAttempt::where('user_id', $user->id)
+                ->where('quiz_id', $quiz->id)
+                ->first();
+
+            if ($existingAttempt) {
+                // Update attempt yang sudah ada dengan data terbaru
+                $existingAttempt->update([
+                    'score' => $isCorrect ? 100 : 0,
+                    'time' => $request->time,
+                    'updated_at' => now()
+                ]);
+            } else {
+                // Buat attempt baru jika belum pernah
+                QuizAttempt::create([
+                    'user_id' => $user->id,
+                    'quiz_id' => $quiz->id,
+                    'score' => $isCorrect ? 100 : 0,
+                    'time' => $request->time
+                ]);
+            }
         }
 
         // Update quest progress untuk quiz
@@ -346,10 +374,11 @@ class CourseController extends Controller
             ->first();
 
         // Ambil leaderboard untuk semua quiz di lesson ini (total skor per user)
-        $leaderboard = QuizAttempt::selectRaw('user_id, SUM(score) as total_score')
+        $leaderboard = QuizAttempt::selectRaw('user_id, SUM(score) as total_score, MIN(time) as best_time')
             ->whereIn('quiz_id', $quizzes->pluck('id'))
             ->groupBy('user_id')
             ->orderBy('total_score', 'desc')
+            ->orderBy('best_time', 'asc')
             ->with('user')
             ->limit(10)
             ->get();
