@@ -545,7 +545,7 @@ class CourseController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Active lesson berhasil diubah',
+            'message' => 'Lesson aktif berhasil diatur',
             'data' => [
                 'lesson' => $lesson,
                 'progress' => $lessonProgress,
